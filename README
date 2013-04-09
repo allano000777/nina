@@ -1,0 +1,22 @@
+========================================================================
+  NINA : Notre Dame Information Network Analysis Toolkit
+	http://web.engr.illinois.edu/~weninge1/
+========================================================================
+
+Notre Dame Information Network Analysis Toolkit (NINA) is a general purpose 
+system for analysis and manipulation of large networks.
+
+Some of applications expect that GnuPlot and GraphViz are installed and
+accessible -- paths are in the system PATH variable or they reside in the
+working directory.
+
+/////////////////////////////////////////////////////////////////////////////
+
+NINA is based in large part on the JGraphT system, which is licensed under 
+LGPL v2.1. Also, large portions of NINA also include ports from the SNAP
+project, which is released under the more liberal BSD License. 
+
+Because LGPL is a bit more restrictive, and because NINA is mostly based on
+JGraphT we have licensed this software under LGPL.
+
+/////////////////////////////////////////////////////////////////////////////

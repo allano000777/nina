@@ -54,3 +54,13 @@ the terms of the MIT License.
 
 You can find out more about Jsoup and/or download the latest version from 
 jsoup.org/ 
+
+--------------------------------
+commons-compress.jar (version 1.5)
+--------------------------------
+TThe Apache Commons Compress library defines an API for working with ar, 
+cpio, Unix dump, tar, zip, gzip, XZ, Pack200 and bzip2 files.  The Commons-
+Compress library is licensed under the terms of the Apache License.
+
+You can find out more about Commons-Compress and/or download the latest 
+version from http://commons.apache.org/proper/commons-compress/

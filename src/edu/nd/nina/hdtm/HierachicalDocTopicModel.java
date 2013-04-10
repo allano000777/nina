@@ -20,6 +20,7 @@ import java.util.TreeMap;
 
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedFeatureGraph;
+import edu.nd.nina.io.FeatureGraph;
 import edu.nd.nina.math.Randoms;
 import edu.nd.nina.types.Alphabet;
 import edu.nd.nina.types.FeatureSequence;
@@ -160,7 +161,7 @@ public class HierachicalDocTopicModel {
 	 */
 	public void initialize(File featureGraphFile, Randoms random) {
 		this.random = random;
-		this.root = loadFeatureGraphFromFile(featureGraphFile);
+		this.root = FeatureGraph.loadFeatureGraphFromFile(featureGraphFile, graph);
 
 		if (!(graph.getInstances().get(0).getData() instanceof FeatureSequence)) {
 			throw new IllegalArgumentException(
@@ -1196,83 +1197,6 @@ public class HierachicalDocTopicModel {
 		}
 
 	}
-
-	/**
-	 * Loads the directedFeatureGraph from a file. The file should contain
-	 * vertex definitions and directed edges in the followuing form:
-	 * 
-	 * Vertex Definitions - 0 a b c d
-	 * 
-	 * where 0 is an Integer id for the vertex followed by a tokenizable
-	 * sequence of "features" (probably words)
-	 * 
-	 * Edge Definitions - 0 -> 1
-	 * 
-	 * where 0 and 1 are previously defined vertices and '->' denotes the
-	 * directed edge. Reverse edges ('<-') are not allowed
-	 * 
-	 * The first vertex defined in the featureGraphFile is declared to be the
-	 * root node
-	 * 
-	 * @param featureGraphFile
-	 *            File containing textual representation of a
-	 *            directedFeatureGraph
-	 * @return The root vertex of the newly loaded directedFeatureGraph
-	 */
-	private Instance loadFeatureGraphFromFile(File featureGraphFile) {
-		System.out.println("Reading " + featureGraphFile);
-		Instance root = null;
-
-		HashMap<Integer, Instance> tempMap = new HashMap<Integer, Instance>();
-
-		BufferedReader br = null;
-		try {
-			br = new BufferedReader(new FileReader(featureGraphFile));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		String line = "";
-		try {
-			while ((line = br.readLine()) != null) {
-				line = line.trim();
-				if (line.isEmpty()) {
-					continue;
-				}
-				if (line.startsWith("#")) {
-					continue;
-				}
-
-				if (!line.contains("->")) {
-					Instance ins = new Instance(line, false, null, null);
-					tempMap.put(
-							Integer.parseInt(line.substring(0,
-									line.indexOf(" "))), ins);
-					if (root == null) {
-						root = ins;
-					}
-					graph.addVertex(ins);
-				} else {
-					String[] edges = line.split("->");
-					graph.addEdge(
-							tempMap.get(Integer.parseInt(edges[0].trim())),
-							tempMap.get(Integer.parseInt(edges[1].trim())));
-				}
-
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				br.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return root;
-	}
-
-
 
 	public static void main(String[] args) {
 

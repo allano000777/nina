@@ -39,11 +39,18 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import edu.nd.nina.*;
-import edu.nd.nina.alg.util.*;
-import edu.nd.nina.graph.*;
+import edu.nd.nina.UndirectedGraph;
+import edu.nd.nina.alg.util.VertexDegreeComparator;
+import edu.nd.nina.graph.UndirectedSubgraph;
 
 
 /**

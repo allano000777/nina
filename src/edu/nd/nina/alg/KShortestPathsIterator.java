@@ -41,9 +41,16 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
-import edu.nd.nina.*;
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.Graph;
+import edu.nd.nina.Graphs;
 
 
 /**

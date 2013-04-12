@@ -37,17 +37,17 @@ Comparable<Triple<S1, S2, S3>> {
 	public String toString() {
 		return "<" + v1 + ", " + v2 + "," + v3 + ">";
 	}
-	
+
 	@Override
 	public int compareTo(Triple<S1, S2, S3> o) {
-		if(o.v1.compareTo(this.v1) == 0){
-			if(o.v2.compareTo(this.v2) == 0){
-				return o.v3.compareTo(this.v3);
-			}else{
-				return o.v2.compareTo(this.v2);
+		if (this.v1.compareTo(o.v1) == 0) {
+			if (this.v2.compareTo(o.v2) == 0) {
+				return this.v3.compareTo(o.v3);
+			} else {
+				return this.v2.compareTo(o.v2);
 			}
-		}else{
-			return o.v1.compareTo(this.v1);
+		} else {
+			return this.v1.compareTo(o.v1);
 		}
 	}
 

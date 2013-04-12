@@ -39,9 +39,10 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
-import edu.nd.nina.graph.*;
+import edu.nd.nina.graph.SimpleWeightedGraph;
 
 
 /**

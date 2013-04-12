@@ -577,4 +577,5 @@ public final class MatrixOps {
 		for (int i = 0; i < scores.length; i++)
 			scores[i] /= sum;
 	}
+	
 }

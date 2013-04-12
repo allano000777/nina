@@ -40,7 +40,7 @@
  */
 package edu.nd.nina.alg;
 
-import edu.nd.nina.*;
+import edu.nd.nina.Graph;
 
 
 /**

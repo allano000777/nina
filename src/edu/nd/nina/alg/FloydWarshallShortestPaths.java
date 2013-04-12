@@ -40,11 +40,18 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import edu.nd.nina.*;
-import edu.nd.nina.graph.*;
-import edu.nd.nina.util.*;
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.Graph;
+import edu.nd.nina.GraphPath;
+import edu.nd.nina.graph.GraphPathImpl;
+import edu.nd.nina.util.VertexPair;
 
 
 /**

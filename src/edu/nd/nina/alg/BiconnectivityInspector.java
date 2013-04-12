@@ -40,9 +40,11 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-import edu.nd.nina.*;
+import edu.nd.nina.UndirectedGraph;
 
 
 /**

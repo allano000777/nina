@@ -41,10 +41,19 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import edu.nd.nina.*;
-import edu.nd.nina.graph.*;
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.Graph;
+import edu.nd.nina.Graphs;
+import edu.nd.nina.UndirectedGraph;
+import edu.nd.nina.graph.DirectedMaskSubgraph;
+import edu.nd.nina.graph.MaskFunctor;
+import edu.nd.nina.graph.UndirectedMaskSubgraph;
 
 
 /**

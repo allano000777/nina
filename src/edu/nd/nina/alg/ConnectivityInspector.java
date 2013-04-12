@@ -42,12 +42,31 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Vector;
 
-import edu.nd.nina.*;
-import edu.nd.nina.event.*;
-import edu.nd.nina.graph.*;
-import edu.nd.nina.traverse.*;
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.Graph;
+import edu.nd.nina.UndirectedGraph;
+import edu.nd.nina.event.ConnectedComponentTraversalEvent;
+import edu.nd.nina.event.GraphEdgeChangeEvent;
+import edu.nd.nina.event.GraphListener;
+import edu.nd.nina.event.GraphVertexChangeEvent;
+import edu.nd.nina.event.TraversalListenerAdapter;
+import edu.nd.nina.event.VertexSetListener;
+import edu.nd.nina.event.VertexTraversalEvent;
+import edu.nd.nina.graph.AsUndirectedGraph;
+import edu.nd.nina.graph.UndirectedSubgraph;
+import edu.nd.nina.structs.Pair;
+import edu.nd.nina.traverse.BreadthFirstIterator;
 
 
 /**
@@ -104,6 +123,21 @@ public class ConnectivityInspector<V, E>
     {
         init();
         this.graph = new AsUndirectedGraph<V, E>(g);
+    }
+    
+    /**
+     * Creates a connectivity inspector for the specified directed graph.
+     *
+     * @param g the graph for which a connectivity inspector to be created.
+     */
+    public ConnectivityInspector(Graph<V, E> g)
+    {
+        init();
+        if(g instanceof DirectedGraph){
+        	this.graph = new AsUndirectedGraph<V, E>((DirectedGraph<V, E>)g);
+        }else{
+        	this.graph = g;
+        }
     }
 
     //~ Methods ----------------------------------------------------------------
@@ -309,6 +343,26 @@ public class ConnectivityInspector<V, E>
 		}
 		return best;
 	}
+
+	public Vector<Pair<Float, Float>> getWccSizeCnt() {
+		Vector<Pair<Float, Float>> WccToCntV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> WccToCntH = new Hashtable<Integer, Integer>();
+		for (Set<V> v : connectedSets()) {
+			if (WccToCntH.containsKey(v.size())) {
+				WccToCntH.put(v.size(), WccToCntH.get(v.size()) + 1);
+			} else {
+				WccToCntH.put(v.size(), WccToCntH.get(1));
+			}
+		}
+
+		for (Entry<Integer, Integer> e : WccToCntH.entrySet()) {
+			WccToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
+					.getValue()));
+		}
+		Collections.sort(WccToCntV);
+		return WccToCntV;
+	}
+
 }
 
 // End ConnectivityInspector.java

@@ -40,10 +40,23 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.Vector;
 
-import edu.nd.nina.*;
-import edu.nd.nina.graph.*;
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.graph.DirectedSubgraph;
+import edu.nd.nina.graph.EdgeReversedGraph;
+import edu.nd.nina.structs.Pair;
 
 
 /**
@@ -386,8 +399,39 @@ public class StrongConnectivityInspector<V, E>
         V getVertex()
         {
             return vertex;
-        }
-    }
+		}
+	}
+
+	public Vector<Pair<Float, Float>> getSccSizeCnt() {
+		Vector<Pair<Float, Float>> SccToCntV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> SccToCntH = new Hashtable<Integer, Integer>();
+		for (Set<V> v : stronglyConnectedSets()) {
+			if (SccToCntH.containsKey(v.size())) {
+				SccToCntH.put(v.size(), SccToCntH.get(v.size()) + 1);
+			} else {
+				SccToCntH.put(v.size(), SccToCntH.get(1));
+			}
+		}
+
+		for (Entry<Integer, Integer> e : SccToCntH.entrySet()) {
+			SccToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
+					.getValue()));
+		}
+		Collections.sort(SccToCntV);
+		return SccToCntV;
+	}
+
+	public DirectedSubgraph<V,E> getMaxScc() {
+		DirectedSubgraph<V, E> best = null;
+		int maxsize = 0;
+		for(Set<V> v : stronglyConnectedSets()){						
+			if(v.size() > maxsize){
+				best =  new DirectedSubgraph<V,E>((DirectedSubgraph<V,E>)graph, v, null);
+				maxsize = v.size();
+			}
+		}
+		return best;
+	}
 }
 
 // End StrongConnectivityInspector.java

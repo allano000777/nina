@@ -37,9 +37,10 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
-import edu.nd.nina.graph.*;
+import edu.nd.nina.graph.SimpleDirectedGraph;
 
 
 /**

@@ -38,11 +38,22 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import edu.nd.nina.*;
-import edu.nd.nina.event.*;
-import edu.nd.nina.util.*;
+import edu.nd.nina.Graph;
+import edu.nd.nina.Graphs;
+import edu.nd.nina.event.GraphEdgeChangeEvent;
+import edu.nd.nina.event.GraphListener;
+import edu.nd.nina.event.GraphVertexChangeEvent;
+import edu.nd.nina.event.VertexSetListener;
+import edu.nd.nina.util.ModifiableInteger;
 
 
 /**

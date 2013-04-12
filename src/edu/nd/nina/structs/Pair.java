@@ -33,10 +33,10 @@ public class Pair<T extends Comparable<T>, V extends Comparable<V>> implements
 
 	@Override
 	public int compareTo(Pair<T, V> o) {
-		if (o.p1.compareTo(this.p1) == 0) {
-			return o.p2.compareTo(this.p2);
+		if (this.p1.compareTo(o.p1) == 0) {
+			return this.p2.compareTo(o.p2);
 		} else {
-			return o.p1.compareTo(this.p1);
+			return this.p1.compareTo(o.p1);
 		}
 	}
 

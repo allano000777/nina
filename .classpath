@@ -9,6 +9,8 @@
 	<classpathentry kind="lib" path="lib/TGGraphLayout.jar"/>
 	<classpathentry kind="lib" path="lib/trove-3.0.3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-compress-1.5.jar"/>
+	<classpathentry kind="lib" path="lib/colt.jar" sourcepath="C:/Users/weninger/Downloads/colt-1.2.0.zip"/>
+	<classpathentry kind="lib" path="lib/concurrent.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

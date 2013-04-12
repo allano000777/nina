@@ -39,10 +39,12 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
-import edu.nd.nina.*;
-import edu.nd.nina.graph.*;
+import edu.nd.nina.UndirectedGraph;
+import edu.nd.nina.graph.UndirectedSubgraph;
 
 
 /**

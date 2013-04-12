@@ -40,9 +40,13 @@
  */
 package edu.nd.nina.alg;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import edu.nd.nina.*;
+import edu.nd.nina.Graph;
+import edu.nd.nina.GraphPath;
+import edu.nd.nina.Graphs;
 
 
 /**

@@ -287,6 +287,25 @@ public abstract class AbstractBaseGraph<V, E>
             return true;
         }
     }
+    
+    /**
+     * @see Graph#addAllMatchingType(Class<?>)
+     */
+    public Set<V> getAllMatchingType(Class<?> type)
+    {
+    	if (type == null) {
+            throw new NullPointerException();
+        } else {
+            return specifics.getAllMatchingType(type);
+        }
+    }
+    
+    /**
+     * @see Graph#getTypes()
+     */
+    public Set<Class<?>> getTypes(){
+    	return specifics.getTypes();
+    }
 
     /**
      * @see Graph#getEdgeSource(Object)
@@ -540,6 +559,21 @@ public abstract class AbstractBaseGraph<V, E>
     {
         private static final long serialVersionUID = 785196247314761183L;
 
+        protected Map<Class<?>, Set<V>> typeMap = new LinkedHashMap<Class<?>, Set<V>>();
+
+        
+        public Set<V> getAllMatchingType(Class<?> c){
+        	if(typeMap.containsKey(c)){
+        		return typeMap.get(c);
+        	}else{
+        		return new HashSet<V>();
+        	}
+        }
+        
+        public Set<Class<?>> getTypes(){
+        	return typeMap.keySet();
+        }
+        
         public abstract void addVertex(V vertex);
 
         public abstract Set<V> getVertexSet();
@@ -763,11 +797,19 @@ public abstract class AbstractBaseGraph<V, E>
         private Map<V, DirectedEdgeContainer<V, E>> vertexMapDirected =
             new LinkedHashMap<V, DirectedEdgeContainer<V, E>>();
 
-        public void addVertex(V v)
-        {
-            // add with a lazy edge container entry
-            vertexMapDirected.put(v, null);
-        }
+		public void addVertex(V v) {
+			// add with a lazy edge container entry
+			vertexMapDirected.put(v, null);
+			Set<V> sv = typeMap.get(v.getClass());
+			if (sv == null) {
+				sv = new HashSet<V>();
+				sv.add(v);
+			} else {
+				sv.add(v);
+			}
+			typeMap.put(v.getClass(), sv);
+		}
+        
 
         public Set<V> getVertexSet()
         {
@@ -1029,6 +1071,14 @@ public abstract class AbstractBaseGraph<V, E>
         {
             // add with a lazy edge container entry
             vertexMapUndirected.put(v, null);
+            Set<V> sv = typeMap.get(v.getClass());
+			if (sv == null) {
+				sv = new HashSet<V>();
+				sv.add(v);
+			} else {
+				sv.add(v);
+			}
+			typeMap.put(v.getClass(), sv);
         }
 
         public Set<V> getVertexSet()

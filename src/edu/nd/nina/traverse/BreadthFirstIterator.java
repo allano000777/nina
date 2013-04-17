@@ -64,6 +64,7 @@ public class BreadthFirstIterator<V, E>
     //~ Instance fields --------------------------------------------------------
 
     private Deque<V> queue = new ArrayDeque<V>();
+    private Map<V, Integer> hopMap = new HashMap<V, Integer>();
 
     //~ Constructors -----------------------------------------------------------
 
@@ -109,6 +110,12 @@ public class BreadthFirstIterator<V, E>
     {
         putSeenData(vertex, null);
         queue.add(vertex);
+        if(edge != null){
+        	V put = Graphs.getOppositeVertex(this.getGraph(), edge, vertex);
+        	hopMap.put(vertex, hopMap.get(put)+1);
+        }else{
+        	hopMap.put(vertex, 0);
+        }
     }
 
     /**
@@ -124,7 +131,16 @@ public class BreadthFirstIterator<V, E>
     protected V provideNextVertex()
     {
         return queue.removeFirst();
-    }
+	}
+
+	/**
+	 * distance from startVertex to V
+	 * 
+	 * @return
+	 */
+	public Map<V, Integer> getHopMap() {
+		return hopMap;
+	}
 }
 
 // End BreadthFirstIterator.java

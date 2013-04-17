@@ -413,6 +413,10 @@ public interface Graph<V, E>
     public V getEdgeSource(E e);
     
     public V randomVertex(Randoms r);
+    
+    public Set<V> getAllMatchingType(Class<?> type);
+    
+    public Set<Class<?>> getTypes();
 
     /**
      * Returns the target vertex of an edge. For an undirected graph, source and

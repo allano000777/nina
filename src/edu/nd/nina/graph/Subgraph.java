@@ -313,6 +313,26 @@ public class Subgraph<V, E, G extends Graph<V, E>>
             return true;
         }
     }
+    
+    /**
+	 * @see Graph#getAllMatchingType(Class<?>)
+	 */
+	public Set<V> getAllMatchingType(Class<?> clazz) {
+		Set<V> allMatching = base.getAllMatchingType(clazz);
+		allMatching.retainAll(vertexSet);
+		return allMatching;
+	}
+	
+    /**
+	 * @see Graph#getTypes()
+	 */
+	public Set<Class<?>> getTypes() {
+		Set<Class<?>> ret = new HashSet<Class<?>>();
+		for(V v : vertexSet){
+			ret.add(v.getClass());
+		}
+		return ret;
+	}
 
     /**
      * @see Graph#containsEdge(Object)

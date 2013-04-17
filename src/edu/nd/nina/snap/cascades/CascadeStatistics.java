@@ -15,7 +15,7 @@ import com.panayotis.gnuplot.style.Style;
 import com.panayotis.gnuplot.terminal.ImageTerminal;
 
 import edu.nd.nina.DirectedGraph;
-import edu.nd.nina.alg.BreadthDepthFirstSearch;
+import edu.nd.nina.alg.BreadthFirstSearch;
 import edu.nd.nina.alg.ConnectivityInspector;
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedSubgraph;
@@ -544,9 +544,7 @@ public class CascadeStatistics {
 		final double M1 = DivByM ? CcNet.vertexSet().size() : 1;
 		assert (M1 >= 1);
 		int Root = findCascadeRoot(CcInf, nIdInfTmH);
-		BreadthDepthFirstSearch<Integer, DefaultEdge> bfs = new BreadthDepthFirstSearch<Integer, DefaultEdge>(
-				CcInf);
-		Vector<Pair<Integer, Integer>> HopCntV = bfs.getNodesAtHops(Root, true);
+		Vector<Pair<Integer, Integer>> HopCntV = BreadthFirstSearch.getNodesAtHops(CcInf, Root);
 		int MxN = 0, Lev = 0, IncL = 0;
 		for (int i = 0; i < HopCntV.size(); i++) {
 			if (MxN < HopCntV.get(i).p2) {
@@ -571,8 +569,7 @@ public class CascadeStatistics {
 		}
 
 		Root = findCascadeRoot(CcNet, nIdInfTmH);
-		bfs = new BreadthDepthFirstSearch<Integer, DefaultEdge>(CcNet);
-		HopCntV = bfs.getNodesAtHops(Root, true);
+		HopCntV = BreadthFirstSearch.getNodesAtHops(CcNet, Root);
 
 		MxN = 0;
 		Lev = 0;

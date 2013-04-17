@@ -101,7 +101,7 @@ public class Moment {
 				for (int ValN = 0; ValN < ValWgtV.size(); ValN++) {
 					final double Val = ValWgtV.get(ValN).p1;
 					Vari += ValWgtV.get(ValN).p2
-							* (float) Math.sqrt(Val - Mean);
+							* (float) Math.sqrt(Math.abs(Val - Mean));
 					if (Val < Mn) {
 						Mn = (float) Val;
 					}

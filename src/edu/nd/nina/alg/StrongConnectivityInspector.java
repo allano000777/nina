@@ -392,46 +392,65 @@ public class StrongConnectivityInspector<V, E>
         }
 
         VertexData<V> getFinishedData()
-        {
-            return null;
-        }
+ {
+			return null;
+		}
 
-        V getVertex()
-        {
-            return vertex;
+		V getVertex() {
+			return vertex;
 		}
 	}
 
-	public Vector<Pair<Float, Float>> getSccSizeCnt() {
-		Vector<Pair<Float, Float>> SccToCntV = new Vector<Pair<Float, Float>>();
-		Hashtable<Integer, Integer> SccToCntH = new Hashtable<Integer, Integer>();
-		for (Set<V> v : stronglyConnectedSets()) {
-			if (SccToCntH.containsKey(v.size())) {
-				SccToCntH.put(v.size(), SccToCntH.get(v.size()) + 1);
-			} else {
-				SccToCntH.put(v.size(), SccToCntH.get(1));
-			}
-		}
-
-		for (Entry<Integer, Integer> e : SccToCntH.entrySet()) {
-			SccToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
-					.getValue()));
-		}
-		Collections.sort(SccToCntV);
-		return SccToCntV;
-	}
-
-	public DirectedSubgraph<V,E> getMaxScc() {
+	/**
+	 * Returns the largest strongly connected component.
+	 * 
+	 * @param directedGraph
+	 *            Graph snapshot
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> DirectedSubgraph<V, E> getMaxScc(
+			DirectedGraph<V, E> directedGraph) {
 		DirectedSubgraph<V, E> best = null;
+		StrongConnectivityInspector<V, E> sci = new StrongConnectivityInspector<V, E>(
+				directedGraph);
 		int maxsize = 0;
-		for(Set<V> v : stronglyConnectedSets()){						
-			if(v.size() > maxsize){
-				best =  new DirectedSubgraph<V,E>((DirectedSubgraph<V,E>)graph, v, null);
+		for (Set<V> v : sci.stronglyConnectedSets()) {
+			if (v.size() > maxsize) {
+				best = new DirectedSubgraph<V, E>(
+						(DirectedSubgraph<V, E>) directedGraph, v, null);
 				maxsize = v.size();
 			}
 		}
 		return best;
 	}
+
+	/**
+	 * Counts the size of the largest strongly connected component.
+	 * 
+	 * @param directedGraph
+	 *            Graph snapshot
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> getSccSizeCnt(
+			DirectedGraph<V, E> directedGraph) {
+		Vector<Pair<Float, Float>> sccToCountV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> sccToCountH = new Hashtable<Integer, Integer>();
+		StrongConnectivityInspector<V, E> sci = new StrongConnectivityInspector<V, E>(
+				directedGraph);
+		for (Set<V> v : sci.stronglyConnectedSets()) {
+			if (sccToCountH.containsKey(v.size())) {
+				sccToCountH.put(v.size(), sccToCountH.get(v.size()) + 1);
+			} else {
+				sccToCountH.put(v.size(), 1);
+			}
+		}
+
+		for (Entry<Integer, Integer> e : sccToCountH.entrySet()) {
+			sccToCountV.add(new Pair<Float, Float>((float) e.getKey(),
+					(float) e.getValue()));
+		}
+		Collections.sort(sccToCountV);
+		return sccToCountV;
+	}
 }
 
-// End StrongConnectivityInspector.java

@@ -332,35 +332,54 @@ public class ConnectivityInspector<V, E>
         }
     }
 
-	public UndirectedSubgraph<V, E> getMaxWcc() {
+	/**
+	 * Gets the largest weakly connective component from graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> UndirectedSubgraph<V, E> getMaxWcc(
+			Graph<V, E> graph) {
 		UndirectedSubgraph<V, E> best = null;
 		int maxsize = 0;
-		for(Set<V> v : connectedSets()){						
-			if(v.size() > maxsize){
-				best =  new UndirectedSubgraph<V,E>((UndirectedGraph<V,E>)graph, v, null);
+		ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(graph);
+		for (Set<V> v : ci.connectedSets()) {
+			if (v.size() > maxsize) {
+				best = new UndirectedSubgraph<V, E>(
+						(UndirectedGraph<V, E>) graph, v, null);
 				maxsize = v.size();
 			}
 		}
 		return best;
 	}
 
-	public Vector<Pair<Float, Float>> getWccSizeCnt() {
-		Vector<Pair<Float, Float>> WccToCntV = new Vector<Pair<Float, Float>>();
-		Hashtable<Integer, Integer> WccToCntH = new Hashtable<Integer, Integer>();
-		for (Set<V> v : connectedSets()) {
-			if (WccToCntH.containsKey(v.size())) {
-				WccToCntH.put(v.size(), WccToCntH.get(v.size()) + 1);
+	/**
+	 * Counts the size of the largest weakly connected component.
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> getWccSizeCount(
+			Graph<V, E> graph) {
+		Vector<Pair<Float, Float>> wccToCoutntV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> wccToCountH = new Hashtable<Integer, Integer>();
+		ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(graph);
+		for (Set<V> v : ci.connectedSets()) {
+			if (wccToCountH.containsKey(v.size())) {
+				wccToCountH.put(v.size(), wccToCountH.get(v.size()) + 1);
 			} else {
-				WccToCntH.put(v.size(), WccToCntH.get(1));
+				wccToCountH.put(v.size(), 1);
 			}
 		}
 
-		for (Entry<Integer, Integer> e : WccToCntH.entrySet()) {
-			WccToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
+		for (Entry<Integer, Integer> e : wccToCountH.entrySet()) {
+			wccToCoutntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
 					.getValue()));
 		}
-		Collections.sort(WccToCntV);
-		return WccToCntV;
+		Collections.sort(wccToCoutntV);
+		return wccToCoutntV;
 	}
 
 }

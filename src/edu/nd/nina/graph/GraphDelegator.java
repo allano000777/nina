@@ -149,7 +149,23 @@ public class GraphDelegator<V, E>
     {
         return delegate.addVertex(v);
     }
+    
+    /**
+     * @see Graph#getAllMatchingType(Class<?>)
+     */
+    public Set<V> getAllMatchingType(Class<?> clazz)
+    {
+        return delegate.getAllMatchingType(clazz);
+    }
 
+    /**
+     * @see Graph#getType()
+     */
+    public Set<Class<?>> getTypes()
+    {
+        return delegate.getTypes();
+    }
+    
     /**
      * @see Graph#containsEdge(Object)
      */

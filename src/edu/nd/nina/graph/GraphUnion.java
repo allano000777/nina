@@ -166,6 +166,28 @@ public class GraphUnion<V, E, G extends Graph<V, E>>
     {
         throw new UnsupportedOperationException(READ_ONLY);
     }
+    
+    /**
+	 * @see Graph#getAllMatchingType(Class<?>)
+	 */
+	public Set<V> getAllMatchingType(Class<?> clazz) {
+		Set<V> res = new HashSet<V>();
+		res.addAll(g1.getAllMatchingType(clazz));
+		res.addAll(g2.getAllMatchingType(clazz));
+
+		return Collections.unmodifiableSet(res);
+	}
+	
+    /**
+	 * @see Graph#getTypes()
+	 */
+	public Set<Class<?>> getTypes() {
+		Set<Class<?>> res = new HashSet<Class<?>>();
+		res.addAll(g1.getTypes());
+		res.addAll(g2.getTypes());
+
+		return Collections.unmodifiableSet(res);
+	}
 
     public boolean containsEdge(E e)
     {

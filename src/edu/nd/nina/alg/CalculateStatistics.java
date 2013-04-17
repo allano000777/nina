@@ -3,441 +3,400 @@ package edu.nd.nina.alg;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.Vector;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
 import edu.nd.nina.UndirectedGraph;
-import edu.nd.nina.graph.AsDirectedGraph;
 import edu.nd.nina.graph.Multigraph;
 import edu.nd.nina.math.Moment;
 import edu.nd.nina.structs.Pair;
+import edu.nd.nina.structs.Triple;
 
-
-
+/**
+ * Statistics of a snapshot of a graph (based on gstat.h/cpp in SNAP)
+ * 
+ * @author Tim Weninger
+ * @date 4/17/2013
+ * 
+ * @param <V>
+ *            Vertex type, must extend Comparable<V>
+ * @param <E>
+ *            Edge type
+ */
 public class CalculateStatistics<V extends Comparable<V>, E> {
 
+	/**
+	 * Number of tests to do when estimating graph diameter
+	 */
 	private static final Integer NDiamRuns = 10;
+	/**
+	 * Number of single values in SVD to return
+	 */
 	private static final Integer TakeSngVals = 100;
 
-	// scalar statistics
-	Hashtable<StatVal, Float> ValStatH;
-	// distribution statistics
-	Hashtable<StatVal, Vector<Pair<Float, Float>>> DistrStatH;
-
-	public CalculateStatistics() {
-		ValStatH = new Hashtable<StatVal, Float>();
-	}
-
-	public void calcStats(Graph<V, E> graph, Set<StatVal> statFSet) {
-		if (graph instanceof DirectedGraph) {
-			calcStats((DirectedGraph<V, E>) graph, statFSet);
-		} else {
-			calcStats((UndirectedGraph<V, E>) graph, statFSet);
-		}
-	}
-
-	private void calcStats(UndirectedGraph<V, E> graph, Set<StatVal> statFSet) {
+	/**
+	 * Calculate all statistics. WARNING, this can take a long time for even
+	 * moderately sized graphs
+	 * 
+	 * @param graph
+	 *            Single snapshot of a graph
+	 * @param wcc
+	 *            true if graph is weakly connected component
+	 * @param valStatH
+	 *            table of single results
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcStats(
+			Graph<V, E> graph, boolean wcc, Hashtable<StatVal, Float> valStatH,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
+		
 		System.out.printf("GraphStatistics:  G(%d, %d)\n", graph.vertexSet()
 				.size(), graph.edgeSet().size());
 		long FullTm = System.currentTimeMillis();
 
-		if (statFSet.contains(StatVal.gsvNone)) {
-			return;
+		if (!wcc) {
+			calcBasicStat(ConnectivityInspector.getMaxWcc(graph), true,
+					valStatH);
+		} else {
+			calcBasicStat(graph, false, valStatH);
 		}
-		calcBasicStat(graph, false);
-		if (statFSet.contains(StatVal.gsdWcc)) {
-			ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(
-					graph);
-			calcBasicStat(ci.getMaxWcc(), true);
-		}
+		// diameter
+		calcDiameter(graph, 100, valStatH, distrStatH);
 		// degrees
-		calcDegDistr(graph, statFSet);
-		if (statFSet.contains(StatVal.gsvFullDiam)
-				|| statFSet.contains(StatVal.gsvEffDiam)
-				|| statFSet.contains(StatVal.gsdHops)
-				|| statFSet.contains(StatVal.gsvEffWccDiam)
-				|| statFSet.contains(StatVal.gsdWccHops)
-				|| statFSet.contains(StatVal.gsdWcc)
-				|| statFSet.contains(StatVal.gsdScc)
-				|| statFSet.contains(StatVal.gsdClustCf)
-				|| statFSet.contains(StatVal.gsvClustCf)
-				|| statFSet.contains(StatVal.gsdTriadPart)) {
-			DirectedGraph<V, E> NGraph = new AsDirectedGraph<V, E>(graph);
-			// diameter
-			calcDiam(NGraph, statFSet, false);
-			// components
-			calcConnComp(NGraph, statFSet);
-			// spectral
-			calcSpectral(NGraph, statFSet, -1);
-			// clustering coeffient
-			if (statFSet.contains(StatVal.gsdClustCf)
-					|| statFSet.contains(StatVal.gsvClustCf)) {
-				calcClustCf(NGraph);
-			}
-			if (statFSet.contains(StatVal.gsdTriadPart)) {
-				calcTriadPart(NGraph);
-			}
-			if (statFSet.contains(StatVal.gsvFullDiam)
-					|| statFSet.contains(StatVal.gsvEffWccDiam)) {
-				ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(
-						graph);
-				calcDiam(ci.getMaxWcc(), statFSet, true);
-			}
-			System.out.printf("  [%s]\n", System.currentTimeMillis() - FullTm);
-		}
-	}
-
-	private void calcStats(DirectedGraph<V, E> graph, Set<StatVal> statFSet) {
-		System.out.printf("GraphStatistics:  G(%u, %u)\n", graph.vertexSet()
-				.size(), graph.edgeSet().size());
-		long FullTm = System.currentTimeMillis();
-
-		if (statFSet.contains(StatVal.gsvNone)) {
-			return;
-		}
-
-		calcBasicStat(graph, true);
-		calcDiam(graph, statFSet, false);
-		if (statFSet.contains(StatVal.gsdWcc)
-				|| statFSet.contains(StatVal.gsdWccHops)
-				|| statFSet.contains(StatVal.gsvFullDiam)
-				|| statFSet.contains(StatVal.gsvEffWccDiam)) {
-			ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(
-					graph);
-			UndirectedGraph<V, E> WccGraph = ci.getMaxWcc();
-			calcBasicStat(WccGraph, true);
-			calcDiam(WccGraph, statFSet, true);
-		}
-
-		// degrees
-		calcDegDistr(graph, statFSet);
+		calcDegreeDistribution(graph, distrStatH);
 		// components
-		calcConnComp(graph, statFSet);
+		calcConnectedComponents(graph, distrStatH);
 		// spectral
-		calcSpectral(graph, statFSet, -1);
-		// clustering coeffient
-		if (statFSet.contains(StatVal.gsdClustCf)
-				|| statFSet.contains(StatVal.gsvClustCf)) {
-			calcClustCf(graph);
-		}
-		if (statFSet.contains(StatVal.gsdTriadPart)) {
-			calcTriadPart(graph);
-		}
+		calcSpectral(graph, -1, distrStatH);
+		// clustering coefficient
+		calcClusteringCoefficient(graph, valStatH);
+
+		calcTriangleParticipation(graph, distrStatH);
+
 		System.out.printf("  [%s]\n", System.currentTimeMillis() - FullTm);
+
 	}
 
-	private void calcTriadPart(DirectedGraph<V, E> graph) {
-		System.out.printf("triadParticip ");
-		Vector<Pair<Float, Float>> TriadCntV = new Vector<Pair<Float, Float>>();
-		Triad<V, E> t = new Triad<V, E>();
-		Vector<Pair<Integer, Integer>> CntV = t.getTriadParticip(graph);
-		for (int i = 0; i < CntV.size(); i++) {
-			TriadCntV.add(new Pair<Float, Float>((float) CntV.get(i).p1,
-					(float) CntV.get(i).p2));
+
+	/**
+	 * Calculates the triangle participation
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcTriangleParticipation(
+			Graph<V, E> graph,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
+		System.out.printf("triangle participation ");
+		Vector<Pair<Float, Float>> triangleCountV = new Vector<Pair<Float, Float>>();
+
+		Vector<Pair<Integer, Integer>> countV = Triangles
+				.getTriangleParticipation(graph);
+		for (int i = 0; i < countV.size(); i++) {
+			triangleCountV.add(new Pair<Float, Float>((float) countV.get(i).p1,
+					(float) countV.get(i).p2));
 		}
-		DistrStatH.put(StatVal.gsdTriadPart, TriadCntV);
+		distrStatH.put(StatVal.gsdTriadPart, triangleCountV);
 	}
 
-	public float calcClustCf(Graph<V, E> graph) {
-		return calcClustCf(graph, -1);
+	/**
+	 * Calculates the clustering coefficient of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param valStatH
+	 *            table of result
+	 */
+	public static <V extends Comparable<V>, E> void calcClusteringCoefficient(
+			Graph<V, E> graph, Hashtable<StatVal, Float> valStatH) {
+		calcClusteringCoefficient(graph, -1, valStatH);
 	}
 
-	public float calcClustCf(Graph<V, E> graph, int SampleNodes) {
-		System.out.printf("clustCf ");
-		Triad<V, E> t = new Triad<V, E>();
-		float ClustCf = t.getClustCf(graph, SampleNodes);
-		setVal(StatVal.gsvClustCf, ClustCf);
-		setVal(StatVal.gsvOpenTriads, (float) t.getOpen());
-		setVal(StatVal.gsvClosedTriads, (float) t.getClosed());
-		return ClustCf;
+	/**
+	 * Calculates the clustering coefficient of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param sampleNodes
+	 *            Number of nodes to Sample, -1 to process all nodes
+	 * @param valStatH
+	 *            table of result
+	 */
+	public static <V extends Comparable<V>, E> void calcClusteringCoefficient(
+			Graph<V, E> graph, int sampleNodes,
+			Hashtable<StatVal, Float> valStatH) {
+		System.out.printf("clustering coefficient ");
+		Triple<Float, Integer, Integer> t = Triangles.getClsuteringCoefficient(
+				graph, sampleNodes);
+		valStatH.put(StatVal.gsvClustCf, t.v1);
+		valStatH.put(StatVal.gsvOpenTriads, (float) t.v3);
+		valStatH.put(StatVal.gsvClosedTriads, (float) t.v2);
 	}
 
-	void calcSpectral(DirectedGraph<V, E> graph, int _TakeSngVals) {
-		Set<StatVal> s = new TreeSet<StatVal>();
-		s.add(StatVal.gsdSngVal);
-		s.add(StatVal.gsdSngVec);
-		calcSpectral(graph, s, _TakeSngVals);
-	}
+	/**
+	 * Calculates the spectral properties of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcSpectral(
+			Graph<V, E> graph, int singularValues,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
 
-	void calcSpectral(DirectedGraph<V, E> graph, Set<StatVal> statFSet,
-			int _TakeSngVals) {
-		if (_TakeSngVals == -1) {
-			_TakeSngVals = TakeSngVals;
+		if (singularValues == -1) {
+			singularValues = TakeSngVals;
 		}
+
 		// singular values, vectors
+		singularValues = Math.min(singularValues, graph.vertexSet().size() / 2);
 
-		if (statFSet.contains(StatVal.gsdSngVal)) {
-			final int SngVals = Math.min(_TakeSngVals,
-					graph.vertexSet().size() / 2);
-			SingularValueDecomposition<V, E> svd = new SingularValueDecomposition<V, E>(
-					graph);
+		Vector<Float> singularValues1 = SingularValueDecomposition
+				.getSingularValues(graph, singularValues);
+		Collections.sort(singularValues1);
+		Vector<Pair<Float, Float>> singularValuesV = new Vector<Pair<Float, Float>>();
 
-			Vector<Float> SngValV1 = svd.GetSngVals(SngVals);
-			Collections.sort(SngValV1);
-			Vector<Pair<Float, Float>> SngValV = new Vector<Pair<Float, Float>>();
-
-			for (int i = 0; i < SngValV1.size(); i++) {
-				SngValV.add(new Pair<Float, Float>((float) i + 1,
-						(float) SngValV1.get(i)));
-			}
-			DistrStatH.put(StatVal.gsdSngVal, SngValV);
+		for (int i = 0; i < singularValues1.size(); i++) {
+			singularValuesV.add(new Pair<Float, Float>((float) i + 1,
+					(float) singularValues1.get(i)));
 		}
-		if (statFSet.contains(StatVal.gsdSngVec)) {
+		distrStatH.put(StatVal.gsdSngVal, singularValuesV);
 
-			SingularValueDecomposition<V, E> svd = new SingularValueDecomposition<V, E>(
-					graph);
-			Vector<Float> LeftV = svd.GetSngVec();
-			Collections.sort(LeftV);
+		Vector<Float> leftV = new Vector<Float>();
+		Vector<Float> rightV = new Vector<Float>();
+		SingularValueDecomposition
+				.getSingularValuesVector(graph, leftV, rightV);
+		Collections.sort(leftV);
+		Collections.sort(rightV);
 
-			Vector<Pair<Float, Float>> SngVec = new Vector<Pair<Float, Float>>();
-			for (int i = 0; i < Math.min(10000, LeftV.size() / 2); i++) {
-				if (LeftV.get(i) > 0) {
-					SngVec.add(new Pair<Float, Float>((float) i, LeftV.get(i)));
-				}
+		Vector<Pair<Float, Float>> singularValuesVectorLeft = new Vector<Pair<Float, Float>>();
+		for (int i = 0; i < Math.min(10000, leftV.size() / 2); i++) {
+			if (leftV.get(i) > 0) {
+				singularValuesVectorLeft.add(new Pair<Float, Float>((float) i,
+						leftV.get(i)));
 			}
-			DistrStatH.put(StatVal.gsdSngVec, SngVec);
 		}
+		distrStatH.put(StatVal.gsdSngVecLeft, singularValuesVectorLeft);
+		
+		Vector<Pair<Float, Float>> singularValuesVectorRight = new Vector<Pair<Float, Float>>();
+		for (int i = 0; i < Math.min(10000, rightV.size() / 2); i++) {
+			if (rightV.get(i) > 0) {
+				singularValuesVectorRight.add(new Pair<Float, Float>((float) i,
+						rightV.get(i)));
+			}
+		}
+		distrStatH.put(StatVal.gsdSngVecRight, singularValuesVectorRight);
 
 	}
 
-	void calcConnComp(DirectedGraph<V, E> graph) {
-		Set<StatVal> s = new TreeSet<StatVal>();
-		s.add(StatVal.gsdWcc);
-		s.add(StatVal.gsdScc);
-		calcConnComp(graph, s);
-	}
+	/**
+	 * Calculates the connected components
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcConnectedComponents(
+			Graph<V, E> graph,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
+		System.out.printf("wcc ");
 
-	void calcConnComp(DirectedGraph<V, E> graph, Set<StatVal> statFSet) {
-		if (statFSet.contains(StatVal.gsdWcc)) {
-			System.out.printf("wcc ");
-			ConnectivityInspector<V, E> ci = new ConnectivityInspector<V, E>(
-					graph);
-			Vector<Pair<Float, Float>> WccSzCntV = ci.getWccSizeCnt();
-			DistrStatH.put(StatVal.gsdWcc, WccSzCntV);
-		}
-		if (statFSet.contains(StatVal.gsdScc)) {
+		distrStatH.put(StatVal.gsdWcc,
+				ConnectivityInspector.getWccSizeCount(graph));
+
+		if (graph instanceof DirectedGraph) {
 			System.out.printf("scc ");
-			StrongConnectivityInspector<V, E> ci = new StrongConnectivityInspector<V, E>(
-					(DirectedGraph<V, E>) graph);
-			Vector<Pair<Float, Float>> WccSzCntV = ci.getSccSizeCnt();
-			DistrStatH.put(StatVal.gsdWcc, WccSzCntV);
+
+			distrStatH.put(StatVal.gsdWcc, StrongConnectivityInspector
+					.getSccSizeCnt((DirectedGraph<V, E>) graph));
 		}
-		if (statFSet.contains(StatVal.gsdWcc)
-				|| statFSet.contains(StatVal.gsdScc)) {
-			System.out.printf("\n");
-		}
+		System.out.printf("\n");
 	}
 
-	void calcDegDistr(DirectedGraph<V, E> graph) {
-		Set<StatVal> s = new TreeSet<StatVal>();
-		s.add(StatVal.gsdInDeg);
-		s.add(StatVal.gsdOutDeg);
-		calcDegDistr(graph, s);
-	}
+	/**
+	 * Calculates the degree distribution
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcDegreeDistribution(
+			Graph<V, E> graph,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
 
-	void calcDegDistr(Graph<V, E> graph, Set<StatVal> statFSet) {
 		// degree distribution
-		if (statFSet.contains(StatVal.gsdOutDeg)
-				|| statFSet.contains(StatVal.gsdOutDeg)) {
-			System.out.printf("deg ");
-		}
-		if (statFSet.contains(StatVal.gsdInDeg)) {
-			System.out.printf(" in ");
 
-			Vector<Pair<Float, Float>> InDegV = cntInDeg(graph);
-			DistrStatH.put(StatVal.gsdInDeg, InDegV);
-		}
-		if (statFSet.contains(StatVal.gsdOutDeg)) {
-			System.out.printf(" out ");
-			Vector<Pair<Float, Float>> OutDegV = cntOutDeg(graph);
-			DistrStatH.put(StatVal.gsdInDeg, OutDegV);
-		}
-		if (statFSet.contains(StatVal.gsdOutDeg)
-				|| statFSet.contains(StatVal.gsdOutDeg)) {
-			System.out.printf("\n");
-		}
+		System.out.printf("deg ");
+		System.out.printf(" in ");
 
+		Vector<Pair<Float, Float>> indegreeV = countIndegree(graph);
+		distrStatH.put(StatVal.gsdInDeg, indegreeV);
+
+		System.out.printf(" out ");
+		Vector<Pair<Float, Float>> outdegreeV = countOutdegree(graph);
+		distrStatH.put(StatVal.gsdOutDeg, outdegreeV);
+
+		System.out.printf("\n");
 	}
 
-	void calcDiam(Graph<V, E> graph, boolean IsMxWcc) {
-		Set<StatVal> s = new TreeSet<StatVal>();
-		s.add(StatVal.gsvFullDiam);
-		s.add(StatVal.gsvEffDiam);
-		s.add(StatVal.gsdHops);
-		s.add(StatVal.gsvEffWccDiam);
-		s.add(StatVal.gsdWccHops);
-		calcDiam(graph, s, IsMxWcc);
-	}
+	/**
+	 * Calculate graph diameter
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param numTestNodes
+	 *            Number of nodes to test diameter for, -1 to test all nodes
+	 * @param statValH
+	 *            table of result
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcDiameter(
+			Graph<V, E> graph, int numTestNodes,
+			Hashtable<StatVal, Float> statValH,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
 
-	private void calcDiam(Graph<V, E> graph, Set<StatVal> statFSet,
-			boolean IsMxWcc) {
+		Moment effectiveDiameterMom = new Moment();
+		Moment fullDiameterMom = new Moment();
+		Moment averageDiameterMom = new Moment();
+		
+		Map<V, Integer> hops = null;
+		for (int r = 0; r < NDiamRuns; r++) {
+			double[] effectiveDiameter = { 0d };
+			int[] fullDiameter = { 0 };
+			double[] averageDiameter = { 0d };
 
-		Long ExeTm = 0l;
-		if (!IsMxWcc) {
-			if (statFSet.contains(StatVal.gsvFullDiam)
-					|| statFSet.contains(StatVal.gsvEffDiam)
-					|| statFSet.contains(StatVal.gsdHops)) {
-				System.out.printf("ANF diam %d runs ", NDiamRuns);
-			}
-			boolean Line = false;
-			if (statFSet.contains(StatVal.gsvEffDiam)
-					|| statFSet.contains(StatVal.gsdHops)) {
-				Moment DiamMom = new Moment();
-				ExeTm++;
-				Vector<Pair<Integer, Float>> DistNbrsV = null;
-				for (int r = 0; r < NDiamRuns; r++) {
-					ApproximateNeighborhoodFunction<V, E> anf = new ApproximateNeighborhoodFunction<V, E>(
-							graph, 32, 5, 0);
-					DistNbrsV = anf.getGraphAnf(-1, false);
-					DiamMom.add((float) anf.GetAnfEffDiam(DistNbrsV, 0.9d));
-					System.out.printf(".");
-				}
-				DiamMom.def();
-				setVal(StatVal.gsvEffDiam, DiamMom.getMean());
-				setVal(StatVal.gsvEffDiamDev, DiamMom.getSDev());
-				Vector<Pair<Float, Float>> HopsV = new Vector<Pair<Float, Float>>();
-				for (Pair<Integer, Float> e : DistNbrsV) {
-					HopsV.add(new Pair<Float, Float>((float) e.p1, e.p2));
-				}
+			hops = BreadthFirstSearch.getBfsEffDiam(graph, numTestNodes,
+					effectiveDiameter, fullDiameter, averageDiameter);
 
-				DistrStatH.put(StatVal.gsdHops, HopsV);
-
-				System.out.printf("  ANF-eff %.1f[%s]", DiamMom.getMean(),
-						ExeTm);
-				Line = true;
-			}
-			if (Line) {
-				System.out.printf("\n");
-			}
-		} else {
-			if (statFSet.contains(StatVal.gsvEffWccDiam)
-					|| statFSet.contains(StatVal.gsdWccHops)) {
-				System.out.printf("wcc diam ");
-			}
-			boolean Line = false;
-			if (statFSet.contains(StatVal.gsvFullDiam)) {
-				Moment DiamMom = new Moment();
-				ExeTm++;
-				for (int r = 0; r < NDiamRuns; r++) {
-					BreadthDepthFirstSearch<V, E> bfsdfs = new BreadthDepthFirstSearch<V, E>(
-							graph);
-					int diam = bfsdfs.GetBfsFullDiam(1, false);
-					DiamMom.add(diam);
-					System.out.printf(".");
-				}
-				DiamMom.def();
-				setVal(StatVal.gsvFullDiam, DiamMom.getMean());
-				setVal(StatVal.gsvFullDiamDev, DiamMom.getSDev());
-				System.out.printf("    BFS-full %g[%s]", DiamMom.getMean(),
-						ExeTm);
-				Line = true;
-			}
-			if (statFSet.contains(StatVal.gsvEffWccDiam)
-					|| statFSet.contains(StatVal.gsdWccHops)) {
-				Moment DiamMom = new Moment();
-				ExeTm++;
-
-				Vector<Pair<Integer, Float>> DistNbrsV = null;
-				for (int r = 0; r < NDiamRuns; r++) {
-					ApproximateNeighborhoodFunction<V, E> anf = new ApproximateNeighborhoodFunction<V, E>(
-							graph, 32, 5, 0);
-					DistNbrsV = anf.getGraphAnf(-1, false);
-					DiamMom.add((float) anf.GetAnfEffDiam(DistNbrsV, 0.9d));
-					System.out.printf(".");
-				}
-
-				DiamMom.def();
-				setVal(StatVal.gsvEffWccDiam, DiamMom.getMean());
-				setVal(StatVal.gsvEffWccDiamDev, DiamMom.getSDev());
-				Vector<Pair<Float, Float>> WccHopsV = new Vector<Pair<Float, Float>>();
-				for (int i = 0; i < DistNbrsV.size(); i++) {
-					WccHopsV.add(new Pair<Float, Float>((float) DistNbrsV
-							.get(i).p1, DistNbrsV.get(i).p2));
-				}
-				DistrStatH.put(StatVal.gsdWccHops, WccHopsV);
-				System.out.printf("  ANF-wccEff %.1f[%s]", DiamMom.getMean(),
-						ExeTm);
-				Line = true;
-			}
-			if (Line) {
-				System.out.printf("\n");
-			}
+			effectiveDiameterMom.add((float) effectiveDiameter[0]);
+			fullDiameterMom.add((float) fullDiameter[0]);
+			averageDiameterMom.add((float) averageDiameter[0]);
+			System.out.printf(".");
 		}
-	}
+		effectiveDiameterMom.def();
+		fullDiameterMom.def();
+		averageDiameterMom.def();
 
-	private void calcBasicStat(Graph<V, E> graph, boolean IsMxWcc) {
-		Set<StatVal> s = new TreeSet<StatVal>();
-		s.add(StatVal.gsvBiDirEdges);
-		s.add(StatVal.gsvWccBiDirEdges);
-		calcBasicStat(graph, s, IsMxWcc);
-	}
+		statValH.put(StatVal.gsvFullDiam, fullDiameterMom.getMean());
+		statValH.put(StatVal.gsvFullDiamDev, fullDiameterMom.getSDev());
+		statValH.put(StatVal.gsvEffDiam, effectiveDiameterMom.getMean());
+		statValH.put(StatVal.gsvEffDiamDev, effectiveDiameterMom.getSDev());
+		statValH.put(StatVal.gsvAvgDiam, averageDiameterMom.getMean());
+		statValH.put(StatVal.gsvAvgDiamDev, averageDiameterMom.getSDev());
 
-	private void calcBasicStat(Graph<V, E> graph, Set<StatVal> statFSet,
-			boolean IsMxWcc) {
-		if (!IsMxWcc) {
-			// gsvNodes, gsvZeroNodes, gsvNonZNodes, gsvSrcNodes, gsvDstNodes,
-			// gsvEdges, gsvUniqEdges, gsvBiDirEdges
-			System.out.printf("basic wcc...");
-			final int Nodes = graph.vertexSet().size();
-			setVal(StatVal.gsvNodes, Float.valueOf(Nodes));
-			setVal(StatVal.gsvZeroNodes, Float.valueOf(cntDegNodes(graph, 0)));
-			setVal(StatVal.gsvNonZNodes, Nodes - getVal(StatVal.gsvZeroNodes));
-			setVal(StatVal.gsvSrcNodes,
-					(float) (Nodes - cntOutDegNodes(graph, 0)));
-			setVal(StatVal.gsvDstNodes,
-					(float) (Nodes - cntInDegNodes(graph, 0)));
-			setVal(StatVal.gsvEdges, (float) graph.edgeSet().size());
-			if (!(graph instanceof Multigraph)) {
-				setVal(StatVal.gsvUniqEdges, (float) graph.edgeSet().size());
+		Hashtable<Float, Float> hopCountH = new Hashtable<Float, Float>();
+		Vector<Pair<Float, Float>> hopCountV = new Vector<Pair<Float, Float>>();
+		for (Integer e : hops.values()) {
+			if (!hopCountH.containsKey(Float.valueOf(e))) {
+				hopCountH.put(Float.valueOf(e), 1f);
 			} else {
-				setVal(StatVal.gsvUniqEdges, (float) cntUniqDirEdges(graph));
+				hopCountH.put((float) e, hopCountH.get(Float.valueOf(e)) + 1);
 			}
-			if (statFSet.contains(StatVal.gsvBiDirEdges) == true) {
-				if (graph instanceof DirectedGraph) {
-					setVal(StatVal.gsvBiDirEdges,
-							(float) cntUniqBiDirEdges(graph));
-				} else {
-					setVal(StatVal.gsvUniqEdges, getVal(StatVal.gsvEdges));
-				}
-			}
-			System.out.printf("\n");
-		} else {
-			// gsvWccNodes, gsvWccSrcNodes, gsvWccDstNodes, gsvWccEdges,
-			// gsvWccUniqEdges, gsvWccBiDirEdges
+		}
+
+		for (Entry<Float, Float> e : hopCountH.entrySet()) {
+			hopCountV.add(new Pair<Float, Float>(e.getKey(), e.getValue()));
+		}
+		Collections.sort(hopCountV);
+		distrStatH.put(StatVal.gsdHops, hopCountV);
+	}
+
+	/**
+	 * Calculate basic graph statistics
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param isMaxWcc
+	 *            true if the graph is a WCC
+	 * @param valStatH
+	 *            table of results
+	 */
+	public static <V extends Comparable<V>, E> void calcBasicStat(
+			Graph<V, E> graph, boolean isMaxWcc,
+			Hashtable<StatVal, Float> valStatH) {
+		if (!isMaxWcc) {
 			System.out.printf("basic...");
-			final int Nodes = graph.vertexSet().size();
-			setVal(StatVal.gsvWccNodes, (float) Nodes);
-			setVal(StatVal.gsvWccSrcNodes,
-					(float) (Nodes - cntOutDegNodes(graph, 0)));
-			setVal(StatVal.gsvWccDstNodes,
-					(float) (Nodes - cntInDegNodes(graph, 0)));
-			setVal(StatVal.gsvWccEdges, (float) graph.edgeSet().size());
+			final int size = graph.vertexSet().size();
+			valStatH.put(StatVal.gsvNodes, Float.valueOf(size));
+			valStatH.put(StatVal.gsvZeroNodes,
+					Float.valueOf(countNodesOfDegree(graph, 0)));
+			valStatH.put(StatVal.gsvNonZNodes,
+					size - valStatH.get(StatVal.gsvZeroNodes));
+			valStatH.put(StatVal.gsvSrcNodes,
+					(float) (size - countNodesOfOutdegree(graph, 0)));
+			valStatH.put(StatVal.gsvDstNodes,
+					(float) (size - countNodesOfIndegree(graph, 0)));
+			valStatH.put(StatVal.gsvEdges, (float) graph.edgeSet().size());
 			if (!(graph instanceof Multigraph)) {
-				setVal(StatVal.gsvWccUniqEdges, (float) graph.edgeSet().size());
+				valStatH.put(StatVal.gsvUniqEdges, (float) graph.edgeSet()
+						.size());
 			} else {
-				setVal(StatVal.gsvWccUniqEdges, (float) cntUniqDirEdges(graph));
+				valStatH.put(StatVal.gsvUniqEdges,
+						(float) countUniqueEdges(graph));
 			}
-			if (statFSet.contains(StatVal.gsvBiDirEdges)) {
-				if (graph instanceof DirectedGraph) {
-					setVal(StatVal.gsvWccBiDirEdges,
-							(float) cntUniqBiDirEdges(graph));
-				} else {
-					setVal(StatVal.gsvUniqEdges, getVal(StatVal.gsvEdges));
-				}
+
+			if (graph instanceof DirectedGraph) {
+				valStatH.put(StatVal.gsvBiDirEdges,
+						(float) countUniqueBidirectionalEdges(graph));
+			} else {
+				valStatH.put(StatVal.gsvUniqEdges,
+						(float) countUniqueEdges(graph));
 			}
+
+			System.out.printf("\n");
+		} else {
+
+			System.out.printf("basic wcc...");
+			final int size = graph.vertexSet().size();
+			valStatH.put(StatVal.gsvWccNodes, (float) size);
+			valStatH.put(StatVal.gsvWccSrcNodes,
+					(float) (size - countNodesOfOutdegree(graph, 0)));
+			valStatH.put(StatVal.gsvWccDstNodes,
+					(float) (size - countNodesOfIndegree(graph, 0)));
+			valStatH.put(StatVal.gsvWccEdges, (float) graph.edgeSet().size());
+			if (!(graph instanceof Multigraph)) {
+				valStatH.put(StatVal.gsvWccUniqEdges, (float) graph.edgeSet()
+						.size());
+			} else {
+				valStatH.put(StatVal.gsvWccUniqEdges,
+						(float) countUniqueEdges(graph));
+			}
+			if (graph instanceof DirectedGraph) {
+				valStatH.put(StatVal.gsvWccBiDirEdges,
+						(float) countUniqueBidirectionalEdges(graph));
+			} else {
+				valStatH.put(StatVal.gsvUniqEdges,
+						valStatH.get(StatVal.gsvWccEdges));
+			}
+
 			System.out.printf("\n");
 		}
 	}
 
-	public int cntUniqBiDirEdges(Graph<V, E> graph) {
+	/**
+	 * Counts unique bidirectional edges: u->v && u<-v
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countUniqueBidirectionalEdges(
+			Graph<V, E> graph) {
 
 		if (!(graph instanceof DirectedGraph)) {
 			// then every edge is bi-directional
-			return cntUniqUndirEdges((UndirectedGraph<V, E>) graph);
+			return countUniqueEdges((UndirectedGraph<V, E>) graph);
 		}
 
 		DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
@@ -455,37 +414,45 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		return cnt;
 	}
 
-	private int cntUniqUndirEdges(UndirectedGraph<V, E> graph) {
+	/**
+	 * Count number of unique edges (if multigraph)
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countUniqueEdges(
+			Graph<V, E> graph) {
 		Set<E> nbrSet = new HashSet<E>();
-		int cnt = 0;
+		int count = 0;
 		for (E e : graph.edgeSet()) {
 			nbrSet.add(e);
 		}
-		cnt += nbrSet.size();
-		return cnt;
+		count += nbrSet.size();
+		return count;
 	}
 
-	public int cntUniqDirEdges(Graph<V, E> graph) {
-		Set<E> nbrSet = new HashSet<E>();
-		int cnt = 0;
-		for (E e : graph.edgeSet()) {
-			nbrSet.add(e);
-		}
-		cnt += nbrSet.size();
-		return cnt;
-	}
-
-	private int cntInDegNodes(Graph<V, E> graph, int deg) {
+	/**
+	 * Count the number of nodes containing a certain indegree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param indegree
+	 *            indegree size
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countNodesOfIndegree(
+			Graph<V, E> graph, int indegree) {
 		int cnt = 0;
 		if (graph instanceof DirectedGraph) {
 			for (V v : graph.vertexSet()) {
-				if (((DirectedGraph<V, E>) graph).inDegreeOf(v) == deg) {
+				if (((DirectedGraph<V, E>) graph).inDegreeOf(v) == indegree) {
 					cnt++;
 				}
 			}
 		} else {
 			for (V v : graph.vertexSet()) {
-				if (graph.edgesOf(v).size() == deg) {
+				if (graph.edgesOf(v).size() == indegree) {
 					cnt++;
 				}
 			}
@@ -493,99 +460,128 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		return cnt;
 	}
 
-	public int cntOutDegNodes(Graph<V, E> graph, int deg) {
-		int cnt = 0;
+	/**
+	 * Count the number of nodes containing a certain outdegree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param outdegree
+	 *            outdegree size
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countNodesOfOutdegree(
+			Graph<V, E> graph, int outdegree) {
+		int count = 0;
 		if (graph instanceof DirectedGraph) {
 			for (V v : graph.vertexSet()) {
-				if (((DirectedGraph<V, E>) graph).outDegreeOf(v) == deg) {
-					cnt++;
+				if (((DirectedGraph<V, E>) graph).outDegreeOf(v) == outdegree) {
+					count++;
 				}
 			}
 		} else {
 			for (V v : graph.vertexSet()) {
-				if (graph.edgesOf(v).size() == deg) {
-					cnt++;
+				if (graph.edgesOf(v).size() == outdegree) {
+					count++;
 				}
 			}
 		}
-		return cnt;
+		return count;
 	}
 
-	public Integer cntDegNodes(Graph<V, E> graph, int deg) {
-		int cnt = 0;
+	/**
+	 * Count the number of nodes containing a certain degree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param degree
+	 *            degree size
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> Integer countNodesOfDegree(
+			Graph<V, E> graph, int degree) {
+		int count = 0;
 		for (V v : graph.vertexSet()) {
-			if (graph.edgesOf(v).size() == deg) {
-				cnt++;
+			if (graph.edgesOf(v).size() == degree) {
+				count++;
 			}
 		}
-		return cnt;
+		return count;
 	}
 
-	private Vector<Pair<Float, Float>> cntInDeg(Graph<V, E> graph) {
-		Vector<Pair<Float, Float>> DegToCntV = new Vector<Pair<Float, Float>>();
-		Hashtable<Integer, Integer> DegToCntH = new Hashtable<Integer, Integer>();
-		for (V v : graph.vertexSet()) {
-			if (graph instanceof DirectedGraph) {
-				DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
-				if (DegToCntH.containsKey(dg.incomingEdgesOf(v))) {
-					DegToCntH.put(dg.inDegreeOf(v),
-							DegToCntH.get(dg.inDegreeOf(v)) + 1);
-				} else {
-					DegToCntH.put(dg.inDegreeOf(v), 1);
-				}
-			} else {
-				if (DegToCntH.containsKey(graph.edgesOf(v))) {
-					DegToCntH.put(graph.edgesOf(v).size(),
-							DegToCntH.get(graph.edgesOf(v).size()) + 1);
-				} else {
-					DegToCntH.put(graph.edgesOf(v).size(), 1);
-				}
-			}
-
-		}
-		for (Entry<Integer, Integer> e : DegToCntH.entrySet()) {
-			DegToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
-					.getValue()));
-		}
-		Collections.sort(DegToCntV);
-		return DegToCntV;
-	}
-
-	private Vector<Pair<Float, Float>> cntOutDeg(Graph<V, E> graph) {
-		Vector<Pair<Float, Float>> DegToCntV = new Vector<Pair<Float, Float>>();
-		Hashtable<Integer, Integer> DegToCntH = new Hashtable<Integer, Integer>();
+	/**
+	 * Count the indegree distribution of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return Vector<Pair<indegree, count>>
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> countIndegree(
+			Graph<V, E> graph) {
+		Vector<Pair<Float, Float>> degreeToCountV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> degreeToCountH = new Hashtable<Integer, Integer>();
 		for (V v : graph.vertexSet()) {
 			if (graph instanceof DirectedGraph) {
 				DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
-				if (DegToCntH.containsKey(dg.outgoingEdgesOf(v))) {
-					DegToCntH.put(dg.outDegreeOf(v),
-							DegToCntH.get(dg.outgoingEdgesOf(v)) + 1);
+				if (degreeToCountH.containsKey(dg.inDegreeOf(v))) {
+					degreeToCountH.put(dg.inDegreeOf(v),
+							degreeToCountH.get(dg.inDegreeOf(v)) + 1);
 				} else {
-					DegToCntH.put(dg.outDegreeOf(v), 1);
+					degreeToCountH.put(dg.inDegreeOf(v), 1);
 				}
 			} else {
-				if (DegToCntH.containsKey(graph.edgesOf(v))) {
-					DegToCntH.put(graph.edgesOf(v).size(),
-							DegToCntH.get(graph.edgesOf(v).size()) + 1);
+				if (degreeToCountH.containsKey(graph.edgesOf(v).size())) {
+					degreeToCountH.put(graph.edgesOf(v).size(),
+							degreeToCountH.get(graph.edgesOf(v).size()) + 1);
 				} else {
-					DegToCntH.put(graph.edgesOf(v).size(), 1);
+					degreeToCountH.put(graph.edgesOf(v).size(), 1);
 				}
 			}
 
 		}
-		for (Entry<Integer, Integer> e : DegToCntH.entrySet()) {
-			DegToCntV.add(new Pair<Float, Float>((float) e.getKey(), (float) e
-					.getValue()));
+		for (Entry<Integer, Integer> e : degreeToCountH.entrySet()) {
+			degreeToCountV.add(new Pair<Float, Float>((float) e.getKey(),
+					(float) e.getValue()));
 		}
-		Collections.sort(DegToCntV);
-		return DegToCntV;
+		Collections.sort(degreeToCountV);
+		return degreeToCountV;
 	}
 
-	public void setVal(StatVal key, Float nodes) {
-		ValStatH.put(key, nodes);
+	/**
+	 * Count the outdegree distribution of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @return Vector<Pair<outdegree, count>>
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> countOutdegree(
+			Graph<V, E> graph) {
+		Vector<Pair<Float, Float>> degreeToCountV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> degreeToCountH = new Hashtable<Integer, Integer>();
+		for (V v : graph.vertexSet()) {
+			if (graph instanceof DirectedGraph) {
+				DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
+				if (degreeToCountH.containsKey(dg.outDegreeOf(v))) {
+					degreeToCountH.put(dg.outDegreeOf(v),
+							degreeToCountH.get(dg.outDegreeOf(v)) + 1);
+				} else {
+					degreeToCountH.put(dg.outDegreeOf(v), 1);
+				}
+			} else {
+				if (degreeToCountH.containsKey(graph.edgesOf(v).size())) {
+					degreeToCountH.put(graph.edgesOf(v).size(),
+							degreeToCountH.get(graph.edgesOf(v).size()) + 1);
+				} else {
+					degreeToCountH.put(graph.edgesOf(v).size(), 1);
+				}
+			}
+
+		}
+		for (Entry<Integer, Integer> e : degreeToCountH.entrySet()) {
+			degreeToCountV.add(new Pair<Float, Float>((float) e.getKey(),
+					(float) e.getValue()));
+		}
+		Collections.sort(degreeToCountV);
+		return degreeToCountV;
 	}
 
-	public Float getVal(StatVal key) {
-		return ValStatH.get(key);
-	}
 }

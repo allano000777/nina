@@ -8,17 +8,8 @@ public class Venue extends Type {
 		this.name = venue;
 	}
 
-	public String getName() {
-		return this.getClass().getSimpleName();
-	}
-	
 	public String toString(){
-		return name + "<" + getName() + ">";
-	}
-	
-	@Override
-	public int compareTo(Type o) {
-		return name.compareTo(o.getName());
+		return name + "<Venue>";
 	}
 
 }

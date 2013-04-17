@@ -112,6 +112,22 @@ public class MaskSubgraph<V, E>
     {
         throw new UnsupportedOperationException(UNMODIFIABLE);
     }
+    
+    /**
+     * @see Graph#getAllMatchingType(Class<?>)
+     */
+    public Set<V> getAllMatchingType(Class<?> clazz)
+    {
+        return this.base.getAllMatchingType(clazz);
+    }
+    
+    /**
+     * @see Graph#getType()
+     */
+    public Set<Class<?>> getTypes()
+    {
+        return this.base.getTypes();
+    }
 
     public boolean containsEdge(E e)
     {

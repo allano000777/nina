@@ -146,7 +146,7 @@ public class Cascades {
 					.edgeSet().size());
 
 			// Simulate SI model
-			UndirectedSubgraph<Integer, DefaultEdge> g = new ConnectivityInspector<Integer, DefaultEdge>(ug).getMaxWcc();
+			UndirectedSubgraph<Integer, DefaultEdge> g = ConnectivityInspector.getMaxWcc(ug);
 			boolean DivByM = true;
 			Cascades c = new Cascades();
 			CascadeStatistics cascStat = new CascadeStatistics();

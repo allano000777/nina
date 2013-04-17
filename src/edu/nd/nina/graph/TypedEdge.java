@@ -8,11 +8,11 @@ import edu.nd.nina.Type;
  * @author Tim Weninger
  * @since April 10, 2013
  */
-public class TypedEdge<T1 extends Type, T2 extends Type>
+public class TypedEdge
 {
-    T1 source;
+    Type source;
 
-    T2 target;
+    Type target;
 	
     //~ Methods ----------------------------------------------------------------
 
@@ -22,7 +22,7 @@ public class TypedEdge<T1 extends Type, T2 extends Type>
      *
      * @return source of this edge
      */
-    protected T1 getSource()
+    protected Type getSource()
     {
         return source;
     }
@@ -33,7 +33,7 @@ public class TypedEdge<T1 extends Type, T2 extends Type>
      *
      * @return target of this edge
      */
-    protected T2 getTarget()
+    protected Type getTarget()
     {
         return target;
     }

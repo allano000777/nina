@@ -128,7 +128,7 @@ public class DBLP {
 		TypedSimpleGraph tsg = new TypedSimpleGraph(TypedEdge.class);
 		try {
 			loadDBLPGraphFromFile(FileHandler.toInputStream(data), tsg);
-			PrintStatistics.PrintGraphStatTable(tsg, "./data/dblp/testStats");
+			PrintStatistics.PrintTypedGraphStatTable(tsg, "./data/dblp/testStats", "DBLPTypedGraph");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
@@ -29,10 +30,12 @@ import edu.nd.nina.structs.Triple;
  */
 public class CalculateStatistics<V extends Comparable<V>, E> {
 
+	private static Logger logger = Logger.getLogger(CalculateStatistics.class.getName());
+	
 	/**
 	 * Number of tests to do when estimating graph diameter
 	 */
-	private static final Integer NDiamRuns = 10;
+	private static final Integer NDiamRuns = 1;
 	/**
 	 * Number of single values in SVD to return
 	 */
@@ -94,7 +97,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcTriangleParticipation(
 			Graph<V, E> graph,
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
-		System.out.printf("triangle participation ");
+		logger.info("Calculate Triangle Participation");
 		Vector<Pair<Float, Float>> triangleCountV = new Vector<Pair<Float, Float>>();
 
 		Vector<Pair<Integer, Integer>> countV = Triangles
@@ -132,8 +135,8 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcClusteringCoefficient(
 			Graph<V, E> graph, int sampleNodes,
 			Hashtable<StatVal, Float> valStatH) {
-		System.out.printf("clustering coefficient ");
-		Triple<Float, Integer, Integer> t = Triangles.getClsuteringCoefficient(
+		
+		Triple<Float, Integer, Integer> t = Triangles.getClusteringCoefficient(
 				graph, sampleNodes);
 		valStatH.put(StatVal.gsvClustCf, t.v1);
 		valStatH.put(StatVal.gsvOpenTriads, (float) t.v3);
@@ -208,18 +211,19 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcConnectedComponents(
 			Graph<V, E> graph,
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
-		System.out.printf("wcc ");
-
+		
+		logger.info("Calculate Weakly Connected Component");
+		
 		distrStatH.put(StatVal.gsdWcc,
 				ConnectivityInspector.getWccSizeCount(graph));
 
 		if (graph instanceof DirectedGraph) {
-			System.out.printf("scc ");
+			logger.info("Calculate Strongly Connected Component");
 
 			distrStatH.put(StatVal.gsdWcc, StrongConnectivityInspector
 					.getSccSizeCnt((DirectedGraph<V, E>) graph));
 		}
-		System.out.printf("\n");
+		
 	}
 
 	/**
@@ -236,17 +240,13 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 
 		// degree distribution
 
-		System.out.printf("deg ");
-		System.out.printf(" in ");
-
+		logger.info("Count Indegree");
 		Vector<Pair<Float, Float>> indegreeV = countIndegree(graph);
 		distrStatH.put(StatVal.gsdInDeg, indegreeV);
 
-		System.out.printf(" out ");
+		logger.info("Count Outdegree");
 		Vector<Pair<Float, Float>> outdegreeV = countOutdegree(graph);
 		distrStatH.put(StatVal.gsdOutDeg, outdegreeV);
-
-		System.out.printf("\n");
 	}
 
 	/**
@@ -266,6 +266,8 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			Hashtable<StatVal, Float> statValH,
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
 
+		logger.info("Calculate Diameter");
+		
 		Moment effectiveDiameterMom = new Moment();
 		Moment fullDiameterMom = new Moment();
 		Moment averageDiameterMom = new Moment();
@@ -275,14 +277,13 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			double[] effectiveDiameter = { 0d };
 			int[] fullDiameter = { 0 };
 			double[] averageDiameter = { 0d };
-
+			logger.info("Diameter run: " + r);
 			hops = BreadthFirstSearch.getBfsEffDiam(graph, numTestNodes,
 					effectiveDiameter, fullDiameter, averageDiameter);
 
 			effectiveDiameterMom.add((float) effectiveDiameter[0]);
 			fullDiameterMom.add((float) fullDiameter[0]);
 			averageDiameterMom.add((float) averageDiameter[0]);
-			System.out.printf(".");
 		}
 		effectiveDiameterMom.def();
 		fullDiameterMom.def();
@@ -325,8 +326,8 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcBasicStat(
 			Graph<V, E> graph, boolean isMaxWcc,
 			Hashtable<StatVal, Float> valStatH) {
-		if (!isMaxWcc) {
-			System.out.printf("basic...");
+		logger.info("Calculate Basic Statistics");
+		if (!isMaxWcc) {			
 			final int size = graph.vertexSet().size();
 			valStatH.put(StatVal.gsvNodes, Float.valueOf(size));
 			valStatH.put(StatVal.gsvZeroNodes,
@@ -353,11 +354,9 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 				valStatH.put(StatVal.gsvUniqEdges,
 						(float) countUniqueEdges(graph));
 			}
-
-			System.out.printf("\n");
 		} else {
 
-			System.out.printf("basic wcc...");
+			logger.info("Weakly Connected Component");
 			final int size = graph.vertexSet().size();
 			valStatH.put(StatVal.gsvWccNodes, (float) size);
 			valStatH.put(StatVal.gsvWccSrcNodes,
@@ -379,8 +378,6 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 				valStatH.put(StatVal.gsvUniqEdges,
 						valStatH.get(StatVal.gsvWccEdges));
 			}
-
-			System.out.printf("\n");
 		}
 	}
 

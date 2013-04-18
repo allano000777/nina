@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import edu.nd.nina.Graph;
 import edu.nd.nina.Graphs;
@@ -23,6 +24,8 @@ import edu.nd.nina.structs.Triple;
  *            Edge type
  */
 public class Triangles<V extends Comparable<V>, E> {
+	
+	private static Logger logger = Logger.getLogger(Triangles.class.getName()); 
 
 	/**
 	 * Computes the distribution of average clustering coefficient as defined in
@@ -34,8 +37,10 @@ public class Triangles<V extends Comparable<V>, E> {
 	 *            Number of nodes to sample. -1 to process all nodes.
 	 * @return Triple<AverageCcF, closedTriangles, openTriangles>
 	 */
-	public static <V extends Comparable<V>, E> Triple<Float, Integer, Integer> getClsuteringCoefficient(
+	public static <V extends Comparable<V>, E> Triple<Float, Integer, Integer> getClusteringCoefficient(
 			Graph<V, E> graph, int sampleNodes) {
+		
+		logger.info("Get Clustering Coefficient");
 		Integer closedTrianlges;
 		Integer openTriangles;
 		Vector<Triple<V, Integer, Integer>> nodeTriangleCount = getTriangles(
@@ -86,6 +91,7 @@ public class Triangles<V extends Comparable<V>, E> {
 	 */
 	public static <V extends Comparable<V>, E> Vector<Triple<V, Integer, Integer>> getTriangles(
 			Graph<V, E> graph, int sampleNodes) {
+				
 		Set<V> nbrSet = new HashSet<V>();
 		Vector<V> nodeV = new Vector<V>();
 
@@ -96,8 +102,12 @@ public class Triangles<V extends Comparable<V>, E> {
 			sampleNodes = graph.vertexSet().size();
 		}
 
+		sampleNodes = Math.min(sampleNodes, graph.vertexSet().size());
+		
+		logger.info("Get Triangles with " + sampleNodes + " samples");
+		
 		Vector<Triple<V, Integer, Integer>> nodeTriangleCount = new Vector<Triple<V, Integer, Integer>>();
-
+		
 		for (int node = 0; node < sampleNodes; node++) {
 			V v = nodeV.get(node);
 			if (graph.edgesOf(v).size() < 2) {
@@ -148,7 +158,13 @@ public class Triangles<V extends Comparable<V>, E> {
 			Graph<V, E> graph) {
 		Vector<Pair<Integer, Integer>> TriangleCntV = new Vector<Pair<Integer, Integer>>();
 		Hashtable<Integer, Integer> TriangleCntH = new Hashtable<Integer, Integer>();
+		int total = graph.vertexSet().size();
+		int i=0;
+		int perc = -1;
 		for (V v : graph.vertexSet()) {
+			if(perc < i++/(float)total * 100f){
+				logger.info(++perc + "%");
+			}
 			final int triangles = getTrianglesForNode(graph, v);
 			if (TriangleCntH.containsKey(triangles)) {
 				TriangleCntH.put(triangles, TriangleCntH.get(triangles) + 1);

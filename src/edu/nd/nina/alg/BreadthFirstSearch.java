@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import edu.nd.nina.Graph;
 import edu.nd.nina.structs.Pair;
@@ -22,6 +23,8 @@ import edu.nd.nina.util.GraphUtil;
  *            Edge type
  */
 public class BreadthFirstSearch<V extends Comparable<V>, E> {
+	
+	private static Logger logger = Logger.getLogger(BreadthFirstSearch.class.getName());
 
 	private Map<V, Integer> hopMap = null;
 
@@ -153,6 +156,7 @@ public class BreadthFirstSearch<V extends Comparable<V>, E> {
 			final Graph<V, E> graph, int numberTestNodes,
 			double[] effectiveDiameter, int[] fullDiameter,
 			double[] averageShortestPathLength) {
+		
 		effectiveDiameter[0] = -1;
 		fullDiameter[0] = -1;
 		averageShortestPathLength[0] = -1;
@@ -169,8 +173,13 @@ public class BreadthFirstSearch<V extends Comparable<V>, E> {
 
 		BreadthFirstSearch<V, E> bfs = null;
 
-		for (int tries = 0; tries < Math.min(numberTestNodes, graph.vertexSet()
-				.size()); tries++) {
+		numberTestNodes = Math.min(numberTestNodes, graph.vertexSet()
+				.size());
+		int perc = -1;
+		for (int tries = 0; tries < numberTestNodes; tries++) {
+			if(perc < (tries/(float)numberTestNodes)*100){
+				logger.info(++perc + "%");
+			}
 			final V v = nodeV.get(tries);
 			bfs = new BreadthFirstSearch<V, E>(graph, v);
 			for (Integer dist : bfs.hopMap.values()) {

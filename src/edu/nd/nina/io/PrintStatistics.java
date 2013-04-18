@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
@@ -19,6 +20,8 @@ import edu.nd.nina.structs.Pair;
 
 public class PrintStatistics {
 
+	private static Logger logger = Logger.getLogger(PrintStatistics.class.getName());
+	
 	public static <V extends Comparable<V>, E> void PrintGraphStatTable(
 			final Graph<V, E> graph, String filename) {
 		PrintGraphStatTable(graph, filename, "");
@@ -35,7 +38,11 @@ public class PrintStatistics {
 			}
 		}
 		
+		logger.info("Begin print TypedGraph stat table");
+		
 		Set<Class<?>> types = graph.getTypes();
+		
+		logger.info("Processing full graph");
 		
 		print(graph, pw, "Full Graph");
 		
@@ -49,7 +56,7 @@ public class PrintStatistics {
 				
 				Set<V> v_t = new HashSet<V>();
 				
-				System.out.println(t1.getSimpleName() + " - " + t2.getSimpleName());
+				logger.info("Processing " + t1.getSimpleName() + " - " + t2.getSimpleName());
 				
 				v_t.addAll(graph.getAllMatchingType(t1));
 				v_t.addAll(graph.getAllMatchingType(t2));
@@ -103,7 +110,7 @@ public class PrintStatistics {
 		// components
 		CalculateStatistics.calcConnectedComponents(graph, distrStatH);
 		// clustering coefficient
-		CalculateStatistics.calcClusteringCoefficient(graph, valStatH);
+		CalculateStatistics.calcClusteringCoefficient(graph, 100, valStatH);
 
 		CalculateStatistics.calcTriangleParticipation(graph, distrStatH);
 		

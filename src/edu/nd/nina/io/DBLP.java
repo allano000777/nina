@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
@@ -20,6 +21,8 @@ import edu.nd.nina.types.dblp.Year;
 
 public class DBLP {
 
+	private static Logger logger = Logger.getLogger(DBLP.class.getName());
+	
 	/**
 	 * . Within this archive, you will find one plain text file. Each line
 	 * begins with an identifier for the data found on that line, as is
@@ -43,11 +46,10 @@ public class DBLP {
 	 * @param dblpGraphFile
 	 */
 	public static void loadDBLPGraphFromFile(InputStream is, TypedSimpleGraph tsg){
-
+		
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 		String line = "";
-
 		
 		Map<Integer, Paper> idxToPaper = new TreeMap<Integer, Paper>();
 		List<Pair<Integer, Integer>> refs = new ArrayList<Pair<Integer, Integer>>();
@@ -57,9 +59,13 @@ public class DBLP {
 		Year year = null;
 		Venue v = null;		
 		
+		logger.info("Begin loading ArnetMiner file");
+		
+		int total = 8300000;
+		int perc = -1;
 		int i=0;
 		try {
-			while((line = br.readLine() ) != null){
+			while((line = br.readLine() ) != null){						
 				
 				if(line.trim().isEmpty()){
 					paper = null;
@@ -69,10 +75,12 @@ public class DBLP {
 					
 					// start fresh
 				}else if(line.startsWith("#*")){
-					i++;
-					if(i%10000 == 0) System.out.print(".");
-					if(i%100000 == 0) break;//System.out.print(".\n");
-					//if(i%1000000 == 0) break;
+					
+					if(perc < i++/(float)total * 100f){
+						perc++;
+						logger.info(perc + "% loaded");
+					}
+					
 					paper = new Paper(line.substring(2));
 					
 				}else if(line.startsWith("#@")){
@@ -107,15 +115,31 @@ public class DBLP {
 				}
 			}
 			
+			logger.info("File loaded");
+			
+			logger.info("Begin computing references");
+			
+			total = refs.size();
+			i=0;
+			perc = -1;
 			for(Pair<Integer, Integer> ref : refs){
+				if(i++/(float)total*100f > perc){
+					perc++;
+					logger.info(perc + "% references loaded");
+				}
 				if(idxToPaper.containsKey(ref.p2)){
 					Paper x = idxToPaper.get(ref.p1);
 					Paper y = idxToPaper.get(ref.p2);
 					if(!x.equals(y)){
+						logger.fine("Self reference " + x);
 						tsg.addEdge(x, y);
 					}
 				}
 			}
+			
+			logger.info("Number vertices " + tsg.vertexSet().size());
+			logger.info("Number edges " + tsg.edgeSet().size());
+			logger.info("Graph Loaded");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -124,9 +148,10 @@ public class DBLP {
 	
 	public static void main(String[] args){
 		File data = new File("./data/dblp/test.txt");
-			
+		
 		TypedSimpleGraph tsg = new TypedSimpleGraph(TypedEdge.class);
 		try {
+			NINALogger.setup();
 			loadDBLPGraphFromFile(FileHandler.toInputStream(data), tsg);
 			PrintStatistics.PrintTypedGraphStatTable(tsg, "./data/dblp/testStats", "DBLPTypedGraph");
 		} catch (IOException e) {

@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
-enum Ext {TXT, BZ2};
+enum Ext {TXT, BZ2, GZ};
 
 public class FileHandler {
 	
@@ -22,6 +23,8 @@ public class FileHandler {
 				return txt(data);
 			case BZ2:
 				return bzip2(data);
+			case GZ:
+				return gz(data);
 			default:
 				throw new UnsupportedOperationException("Cannot process "
 						+ extension);
@@ -35,6 +38,19 @@ public class FileHandler {
 		BZip2CompressorInputStream bz2 = null;
 		try {
 			bz2 = new BZip2CompressorInputStream(
+					new FileInputStream(f));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		return bz2;
+	}
+	
+	private static InputStream gz(File f){
+		GzipCompressorInputStream bz2 = null;
+		try {
+			bz2 = new GzipCompressorInputStream(
 					new FileInputStream(f));
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();

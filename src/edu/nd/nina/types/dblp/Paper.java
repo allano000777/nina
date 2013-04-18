@@ -1,14 +1,30 @@
 package edu.nd.nina.types.dblp;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.nd.nina.Type;
 
 public class Paper extends Type {
 	String index;
 	Integer citations;
 	
+	Map<String, String> attributes;
+	
 	public Paper(String title) {
 		this.name = title;
+		attributes = new HashMap<String, String>();
 	}
+	
+	public Paper() {		
+		this("");
+	}
+		
+	public void setTitle(String title){
+		this.name = title;
+	}
+	
+	
 	
 	public void setIdx(String index) {
 		this.index = index;
@@ -57,6 +73,14 @@ public class Paper extends Type {
 		} else if (!index.equals(other.index))
 			return false;
 		return true;
+	}
+
+	public void addAttribute(String name, String value) {
+		attributes.put(name, value);
+	}
+
+	public String getAttribute(String name) {
+		return attributes.get(name);
 	}
 
 

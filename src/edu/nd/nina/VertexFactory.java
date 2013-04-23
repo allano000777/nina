@@ -58,6 +58,7 @@ public interface VertexFactory<V>
      * @return the new vertex
      */
     public V createVertex();
+    
 }
 
 // End VertexFactory.java

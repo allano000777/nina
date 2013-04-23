@@ -80,11 +80,16 @@ public class ClassBasedEdgeFactory<V, E>
      */
     public E createEdge(V source, V target)
     {
-        try {
-            return edgeClass.newInstance();
-        } catch (Exception ex) {
-            throw new RuntimeException("Edge factory failed", ex);
-        }
+		try {
+			if (edgeClass.getConstructor(Type.class, Type.class) == null) {
+				return edgeClass.getConstructor().newInstance();
+			} else {
+				return edgeClass.getConstructor(Type.class, Type.class)
+						.newInstance(source, target);
+			}
+		} catch (Exception ex) {
+			throw new RuntimeException("Edge factory failed", ex);
+		}
     }
 }
 

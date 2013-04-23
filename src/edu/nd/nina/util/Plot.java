@@ -58,7 +58,7 @@ public class Plot {
 				MaxV.add(new Pair<Float, Float>(x, Mom.getMax()));
 			}
 		}
-		Collections.sort(AvgV);
+		//Collections.sort(AvgV);
 		Collections.sort(AvgV2);
 		Collections.sort(MedV);
 		Collections.sort(MinV);

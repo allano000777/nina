@@ -98,7 +98,7 @@ public class DBLP {
 					perc++;
 					logger.info(perc + "% loaded");
 				}
-				current = new Paper();
+				current = new Paper("");
 				currentVenue = null;
 				currentAuthors.clear();
 			}else{

@@ -104,13 +104,13 @@ public class PrintStatistics {
 
 		CalculateStatistics.calcBasicStat(graph, false, valStatH);
 		// diameter
-		CalculateStatistics.calcDiameter(graph, 100, valStatH, distrStatH);
+		CalculateStatistics.calcDiameter(graph, 1000, valStatH, distrStatH);
 		// degrees
 		CalculateStatistics.calcDegreeDistribution(graph, distrStatH);
 		// components
 		CalculateStatistics.calcConnectedComponents(graph, distrStatH);
 		// clustering coefficient
-		CalculateStatistics.calcClusteringCoefficient(graph, 100, valStatH);
+		CalculateStatistics.calcClusteringCoefficient(graph, 1000, valStatH);
 
 		CalculateStatistics.calcTriangleParticipation(graph, distrStatH);
 		

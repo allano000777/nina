@@ -74,6 +74,18 @@ public class ClassBasedVertexFactory<V>
             throw new RuntimeException("Vertex factory failed", e);
         }
     }
+    
+    /**
+     * @see VertexFactory#createVertex()
+     */
+    public V createVertex(Class<?> claz, Object ... args)
+    {
+        try {
+        	return vertexClass.getDeclaredConstructor(claz).newInstance(args);
+        } catch (Exception e) {
+            throw new RuntimeException("Vertex factory failed", e);
+        }
+    }
 }
 
 // End ClassBasedVertexFactory.java

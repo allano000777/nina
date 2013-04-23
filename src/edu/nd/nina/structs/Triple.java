@@ -1,7 +1,6 @@
 package edu.nd.nina.structs;
 
-public class Triple<S1 extends Comparable<S1>, S2 extends Comparable<S2>, S3 extends Comparable<S3>> implements
-Comparable<Triple<S1, S2, S3>> {
+public class Triple<S1, S2, S3>{
 
 	
 	
@@ -36,19 +35,6 @@ Comparable<Triple<S1, S2, S3>> {
 	@Override
 	public String toString() {
 		return "<" + v1 + ", " + v2 + "," + v3 + ">";
-	}
-
-	@Override
-	public int compareTo(Triple<S1, S2, S3> o) {
-		if (this.v1.compareTo(o.v1) == 0) {
-			if (this.v2.compareTo(o.v2) == 0) {
-				return this.v3.compareTo(o.v3);
-			} else {
-				return this.v2.compareTo(o.v2);
-			}
-		} else {
-			return this.v1.compareTo(o.v1);
-		}
 	}
 
 }

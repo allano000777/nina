@@ -13,6 +13,11 @@ public class TypedEdge
     Type source;
 
     Type target;
+    
+    public TypedEdge(Type source, Type target){
+    	this.source = source;
+    	this.target = target;
+    }
 	
     //~ Methods ----------------------------------------------------------------
 
@@ -22,7 +27,7 @@ public class TypedEdge
      *
      * @return source of this edge
      */
-    protected Type getSource()
+    public Type getSource()
     {
         return source;
     }
@@ -33,7 +38,7 @@ public class TypedEdge
      *
      * @return target of this edge
      */
-    protected Type getTarget()
+    public Type getTarget()
     {
         return target;
     }

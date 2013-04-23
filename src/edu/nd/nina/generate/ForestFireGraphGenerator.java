@@ -15,8 +15,7 @@ enum StopReason {srOK, srFlood, srTimeLimit};
 
 /**
  *
- * @author Tim Weninger
- * @since 
+ * @author Tim Weninger, based on Jure's Work
  */
 public class ForestFireGraphGenerator<V, E>
     implements GraphGenerator<V, E, V>

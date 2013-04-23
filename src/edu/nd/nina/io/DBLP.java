@@ -165,7 +165,7 @@ public class DBLP {
 			throw new SAXException("Fatal Error encountered");
 		}
 	}
-
+	//Process DBLP 
 	public static void main(String[] args) {
 		File data = new File("./data/dblp/dblp.xml.gz");
 

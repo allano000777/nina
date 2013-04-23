@@ -47,6 +47,7 @@ import edu.nd.nina.Type;
 import edu.nd.nina.generate.TypedNetworkGenerator;
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
+import edu.nd.nina.io.PrintStatistics;
 import edu.nd.nina.io.Save;
 import edu.nd.nina.structs.Triple;
 import edu.nd.nina.types.dblp.Author;
@@ -105,7 +106,7 @@ public final class TypedGraphDemo
         typedGenerator.generateGraph(typedGraph, null, null);
 
         //Print out the graph 
-      //  PrintStatistics.PrintTypedGraphStatTable(typedGraph, "randomGraph", null);
+        PrintStatistics.PrintTypedGraphStatTable(typedGraph, "randomGraph", null);
         
         Save.saveToDot(typedGraph, "./data/dblp/typeGraph.dot");
     }

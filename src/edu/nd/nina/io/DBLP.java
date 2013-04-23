@@ -63,6 +63,7 @@ public class DBLP {
 			paperType.add("phdthesis");
 			paperType.add("mastersthesis");
 			paperType.add("incollection");
+			paperType.add("www");
 			
 			venueType.add("journal");
 			venueType.add("booktitle");
@@ -125,6 +126,9 @@ public class DBLP {
 			}else if(venueType.contains(rawName)){
 				currentVenue = new Venue(Value);
 			}else if(rawName.equalsIgnoreCase("title")){
+				if(Value.startsWith("ACM SIGMOD Contribution Award 2003 Ac")){
+					System.out.println();
+				}
 				current.setTitle(Value);
 			}else if(rawName.equalsIgnoreCase("author")){
 				currentAuthors.add(new Author(Value));

@@ -23,6 +23,7 @@ import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.types.dblp.Author;
 import edu.nd.nina.types.dblp.Paper;
+import edu.nd.nina.types.dblp.Term;
 import edu.nd.nina.types.dblp.Venue;
 
 public class DBLP {
@@ -69,6 +70,7 @@ public class DBLP {
 			venueType.add("booktitle");
 			
 			currentAuthors = new ArrayList<Author>();
+			currentTerms = new ArrayList<Term>();
 		}
 
 		private Locator locator;
@@ -76,6 +78,7 @@ public class DBLP {
 		private Paper current;
 		private Venue currentVenue;
 		private List<Author> currentAuthors;
+		private List<Term> currentTerms;
 		
 		private String Value;
 		private String key;
@@ -102,6 +105,7 @@ public class DBLP {
 				current = new Paper("");
 				currentVenue = null;
 				currentAuthors.clear();
+				currentTerms.clear();
 			}else{
 				key = rawName;
 			}
@@ -123,13 +127,18 @@ public class DBLP {
 					tsg.addVertex(a);
 					tsg.addEdge(current, a);
 				}
+				for(Term t : currentTerms){
+					tsg.addVertex(t);
+					tsg.addEdge(current, t);
+				}				
 			}else if(venueType.contains(rawName)){
 				currentVenue = new Venue(Value);
-			}else if(rawName.equalsIgnoreCase("title")){
-				if(Value.startsWith("ACM SIGMOD Contribution Award 2003 Ac")){
-					System.out.println();
-				}
+			}else if(rawName.equalsIgnoreCase("title")){				
 				current.setTitle(Value);
+				String[] s = Value.split("\\W+");
+				for(String t : s){
+					currentTerms.add(new Term(t));
+				}
 			}else if(rawName.equalsIgnoreCase("author")){
 				currentAuthors.add(new Author(Value));
 			}else{

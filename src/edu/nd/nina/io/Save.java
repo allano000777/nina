@@ -46,7 +46,7 @@ public class Save {
 				s.put(t.getClass(), s.size());
 			}
 			d.put(t, i);
-			pw.println(i + " [label=" + t.getName() + "];");
+			pw.println(i + " [label=" + t.toString() + "];");
 			pw.println(i + " [shape=" + Shape.values()[s.get(t.getClass())] + "];");
 			i++;
 		}

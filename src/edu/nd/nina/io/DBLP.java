@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import edu.nd.nina.alg.CalculateStatistics;
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.types.dblp.Author;
@@ -64,7 +65,6 @@ public class DBLP {
 			paperType.add("phdthesis");
 			paperType.add("mastersthesis");
 			paperType.add("incollection");
-			paperType.add("www");
 			
 			venueType.add("journal");
 			venueType.add("booktitle");
@@ -84,7 +84,7 @@ public class DBLP {
 		private String key;
 		private String recordTag;
 		
-		int total = 2160375;
+		int total = 3391788;
 		int perc = 0;
 		int i=0;
 
@@ -95,7 +95,7 @@ public class DBLP {
 		public void startElement(String namespaceURI, String localName,
 				String rawName, Attributes atts) throws SAXException {
 
-			if(perc > 5) return;
+			if(perc > 2) return;
 			
 			if(paperType.contains(rawName)){				
 				if(perc < i++/(float)total * 100f){
@@ -106,7 +106,13 @@ public class DBLP {
 				currentVenue = null;
 				currentAuthors.clear();
 				currentTerms.clear();
-			}else{
+			}else if(rawName.equals("www")){
+				//eat
+				current = new Paper("");
+				currentVenue = null;
+				currentAuthors.clear();
+				currentTerms.clear();
+			}else{			
 				key = rawName;
 			}
 			Value = "";
@@ -114,9 +120,17 @@ public class DBLP {
 
 		public void endElement(String namespaceURI, String localName,
 				String rawName) throws SAXException {			
-			if(perc > 5) return;
+			if(perc > 2) return;
 			
 			if(paperType.contains(rawName)){
+				if(current.getName().equals("Convergence Results on Proximal Method of Multipliers in Nonconvex Programming")){
+					System.out.println();
+				}
+				int i=0;
+				while(tsg.containsVertex(current)){
+					i++;
+					current.setIdx(String.valueOf(i));
+				}
 				tsg.addVertex(current);
 				if(currentVenue == null){
 					currentVenue = new Venue(current.getAttribute("publisher"));					
@@ -137,7 +151,7 @@ public class DBLP {
 				current.setTitle(Value);
 				String[] s = Value.split("\\W+");
 				for(String t : s){
-					currentTerms.add(new Term(t));
+					currentTerms.add(new Term(t.toLowerCase()));
 				}
 			}else if(rawName.equalsIgnoreCase("author")){
 				currentAuthors.add(new Author(Value));
@@ -150,7 +164,7 @@ public class DBLP {
 
 		public void characters(char[] ch, int start, int length)
 				throws SAXException {
-			if(perc > 5) return;
+			if(perc > 2) return;
 			Value += new String(ch, start, length);
 		}
 
@@ -186,8 +200,11 @@ public class DBLP {
 		try {
 			NINALogger.setup();
 			loadDBLPGraphFromFile(FileHandler.toInputStream(data), tsg);
-			PrintStatistics.PrintTypedGraphStatTable(tsg,
-					"./data/dblp/testStats", "DBLPTypedGraph");
+			//PrintStatistics.PrintTypedGraphStatTable(tsg,
+			//		"./data/dblp/testStats", "DBLPTypedGraph");
+			//PrintStatistics.PrintCrazyCCF(tsg, "./data/dblp/testStats", "DBLPTypedGraph");
+			//CalculateStatistics.calcAssortativity(tsg, -1);
+			PrintStatistics.PrintCrazyAssortativity(tsg, "./data/dblp/testStats", "DBLPTypedGraph");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

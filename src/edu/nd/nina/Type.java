@@ -17,6 +17,8 @@ public abstract class Type implements Comparable<Type> {
 		return name;
 	};
 	
+	public abstract String toString();
+	
 	@Override
 	public int compareTo(Type o) {
 		return toString().compareTo(o.toString());

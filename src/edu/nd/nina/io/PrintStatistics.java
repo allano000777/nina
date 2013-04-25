@@ -11,17 +11,20 @@ import java.util.logging.Logger;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
+import edu.nd.nina.Type;
 import edu.nd.nina.UndirectedGraph;
 import edu.nd.nina.alg.CalculateStatistics;
 import edu.nd.nina.alg.StatVal;
 import edu.nd.nina.graph.DirectedSubgraph;
+import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.graph.UndirectedSubgraph;
 import edu.nd.nina.structs.Pair;
 
 public class PrintStatistics {
 
-	private static Logger logger = Logger.getLogger(PrintStatistics.class.getName());
-	
+	private static Logger logger = Logger.getLogger(PrintStatistics.class
+			.getName());
+
 	public static <V extends Comparable<V>, E> void PrintGraphStatTable(
 			final Graph<V, E> graph, String filename) {
 		PrintGraphStatTable(graph, filename, "");
@@ -37,27 +40,29 @@ public class PrintStatistics {
 				e.printStackTrace();
 			}
 		}
-		
+
 		logger.info("Begin print TypedGraph stat table");
-		
+
 		Set<Class<?>> types = graph.getTypes();
-		
+
 		logger.info("Processing full graph");
-		
-		print(graph, pw, "Full Graph");
-		
-		int i=0;
+
+		computeStatistics(graph, pw, "Full Graph");
+
+		int i = 0;
 		for (Class<?> t1 : types) {
 			i++;
-			int j=0;
+			int j = 0;
 			for (Class<?> t2 : types) {
 				j++;
-				if(i < j) continue; 
-				
+				if (i < j)
+					continue;
+
 				Set<V> v_t = new HashSet<V>();
-				
-				logger.info("Processing " + t1.getSimpleName() + " - " + t2.getSimpleName());
-				
+
+				logger.info("Processing " + t1.getSimpleName() + " - "
+						+ t2.getSimpleName());
+
 				v_t.addAll(graph.getAllMatchingType(t1));
 				v_t.addAll(graph.getAllMatchingType(t2));
 
@@ -69,19 +74,18 @@ public class PrintStatistics {
 					subgraph = new DirectedSubgraph<V, E>(
 							(DirectedGraph<V, E>) graph, v_t, null);
 				}
-				
-				print(subgraph, pw, t1.getSimpleName() + t2.getSimpleName());
-				
+
+				computeStatistics(subgraph, pw,
+						t1.getSimpleName() + t2.getSimpleName());
+
 			}
 		}
-		
+
 		pw.close();
 	}
-	
+
 	public static <V extends Comparable<V>, E> void PrintGraphStatTable(
 			final Graph<V, E> graph, String fileName, String desc) {
-
-		
 
 		PrintWriter pw = new PrintWriter(System.out);
 		if (!fileName.isEmpty()) {
@@ -92,13 +96,14 @@ public class PrintStatistics {
 			}
 		}
 
-		print(graph, pw, desc);
+		computeStatistics(graph, pw, desc);
 
 		pw.close();
 	}
-	
-	private static <V extends Comparable<V>, E> void print(Graph<V,E> graph, PrintWriter pw, String desc){
-		
+
+	private static <V extends Comparable<V>, E> void computeStatistics(
+			Graph<V, E> graph, PrintWriter pw, String desc) {
+
 		Hashtable<StatVal, Float> valStatH = new Hashtable<StatVal, Float>();
 		Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH = new Hashtable<StatVal, Vector<Pair<Float, Float>>>();
 
@@ -112,8 +117,15 @@ public class PrintStatistics {
 		// clustering coefficient
 		CalculateStatistics.calcClusteringCoefficient(graph, 10, valStatH);
 
-		CalculateStatistics.calcTriangleParticipation(graph, distrStatH);
-		
+		// CalculateStatistics.calcTriangleParticipation(graph, distrStatH);
+
+		print(valStatH, distrStatH, pw, desc);
+	}
+
+	private static <V extends Comparable<V>, E> void print(
+			Hashtable<StatVal, Float> valStatH,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH,
+			PrintWriter pw, String desc) {
 		pw.printf("\n");
 		pw.printf("<table id=\"datatab\" summary=\"Dataset statistics\">\n");
 		pw.printf("  <tr> <th colspan=\"2\">Dataset statistics " + desc
@@ -133,5 +145,120 @@ public class PrintStatistics {
 		}
 
 		pw.printf("</table>\n");
+		pw.flush();
 	}
+
+	public static <V extends Type, E> void PrintCrazyCCF(
+			TypedSimpleGraph graph, String fileName, String desc) {
+		PrintWriter pw = new PrintWriter(System.out);
+		if (!fileName.isEmpty()) {
+			try {
+				pw = new PrintWriter(String.format("%s.html", fileName));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+
+		Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH = new Hashtable<StatVal, Vector<Pair<Float, Float>>>();
+
+		logger.info("Begin print TypedGraph stat table");
+
+		Set<Class<?>> types = graph.getTypes();
+
+		logger.info("Processing full graph");
+		
+		int i = 0;
+		for (Class<?> t1 : types) {
+			i++;
+			int j = 0;
+			for (Class<?> t2 : types) {
+				j++;
+	//			if (i < j)
+//					continue;
+
+				Set<Type> v_t = new HashSet<Type>();
+
+				logger.info("Processing " + t1.getSimpleName() + " - "
+						+ t2.getSimpleName());
+
+				v_t.addAll(graph.getAllMatchingType(t1));
+				v_t.addAll(graph.getAllMatchingType(t2));
+
+				Graph<Type, E> subgraph;
+				if (graph instanceof UndirectedGraph) {
+					subgraph = new UndirectedSubgraph<Type, E>(
+							(UndirectedGraph<Type, E>) graph, v_t, null);
+				} else {
+					subgraph = new DirectedSubgraph<Type, E>(
+							(DirectedGraph<Type, E>) graph, v_t, null);
+				}
+
+				CalculateStatistics.calcJaccardCoefficient(subgraph, 1000, t1, distrStatH);
+
+				print(new Hashtable<StatVal, Float>(), distrStatH, pw, t1.getSimpleName() + " - "
+						+ t2.getSimpleName());
+				
+			}
+		}
+
+		pw.close();
+	}
+	
+	
+	public static <V extends Type, E> void PrintCrazyAssortativity(
+			TypedSimpleGraph graph, String fileName, String desc) {
+		PrintWriter pw = new PrintWriter(System.out);
+		if (!fileName.isEmpty()) {
+			try {
+				pw = new PrintWriter(String.format("%s.html", fileName));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+
+		Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH = new Hashtable<StatVal, Vector<Pair<Float, Float>>>();
+
+		logger.info("Begin print TypedGraph stat table");
+
+		Set<Class<?>> types = graph.getTypes();
+
+		logger.info("Processing full graph");
+		
+		int i = 0;
+		for (Class<?> t1 : types) {
+			i++;
+			int j = 0;
+			for (Class<?> t2 : types) {
+				j++;
+	//			if (i < j)
+//					continue;
+
+				Set<Type> v_t = new HashSet<Type>();
+
+				logger.info("Processing " + t1.getSimpleName() + " - "
+						+ t2.getSimpleName());
+
+				v_t.addAll(graph.getAllMatchingType(t1));
+				v_t.addAll(graph.getAllMatchingType(t2));
+
+				Graph<Type, E> subgraph;
+				if (graph instanceof UndirectedGraph) {
+					subgraph = new UndirectedSubgraph<Type, E>(
+							(UndirectedGraph<Type, E>) graph, v_t, null);
+				} else {
+					subgraph = new DirectedSubgraph<Type, E>(
+							(DirectedGraph<Type, E>) graph, v_t, null);
+				}
+
+				CalculateStatistics.calcJaccardAssortativity(subgraph, 1000, t1, distrStatH);
+
+				print(new Hashtable<StatVal, Float>(), distrStatH, pw, t1.getSimpleName() + " - "
+						+ t2.getSimpleName());
+				
+			}
+		}
+
+		pw.close();
+	}
+	
 }

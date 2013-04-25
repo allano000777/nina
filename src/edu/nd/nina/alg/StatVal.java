@@ -6,6 +6,6 @@ package edu.nd.nina.alg;
 public enum StatVal {
 	gsvNone, gsvTime, gsvNodes, gsvZeroNodes, gsvNonZNodes, gsvSrcNodes, gsvDstNodes, gsvEdges, gsvUniqEdges, gsvBiDirEdges, gsvWccNodes, gsvWccSrcNodes, gsvWccDstNodes, gsvWccEdges, gsvWccUniqEdges, gsvWccBiDirEdges, gsvFullDiam, gsvFullWccDiam, gsvFullDiamDev, gsvFullWccDiamDev, gsvClustCf, gsvOpenTriads, gsvClosedTriads, gsvWccSize, gsvMx,
 
-	gsdUndef, gsdInDeg, gsdOutDeg, gsdWcc, gsdScc, gsdHops, gsdWccHops, gsdSngVal, gsdSngVecLeft, gsdSngVecRight, gsdClustCf, gsdTriadPart, gsdMx, gsvEffDiam, gsvEffDiamDev, gsvAvgDiam, gsvAvgDiamDev;
+	gsdUndef, gsdInDeg, gsdOutDeg, gsdWcc, gsdScc, gsdHops, gsdWccHops, gsdSngVal, gsdSngVecLeft, gsdSngVecRight, gsdClustCf, gsdTriadPart, gsdMx, gsvEffDiam, gsvEffDiamDev, gsvAvgDiam, gsvAvgDiamDev, gsdJacCoef, gsdJacAss;
 
 };

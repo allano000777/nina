@@ -1,8 +1,10 @@
 package edu.nd.nina.alg;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -11,9 +13,11 @@ import java.util.logging.Logger;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
+import edu.nd.nina.Graphs;
 import edu.nd.nina.UndirectedGraph;
 import edu.nd.nina.graph.Multigraph;
 import edu.nd.nina.math.Moment;
+import edu.nd.nina.math.Randoms;
 import edu.nd.nina.structs.Pair;
 import edu.nd.nina.structs.Triple;
 
@@ -30,8 +34,9 @@ import edu.nd.nina.structs.Triple;
  */
 public class CalculateStatistics<V extends Comparable<V>, E> {
 
-	private static Logger logger = Logger.getLogger(CalculateStatistics.class.getName());
-	
+	private static Logger logger = Logger.getLogger(CalculateStatistics.class
+			.getName());
+
 	/**
 	 * Number of tests to do when estimating graph diameter
 	 */
@@ -57,7 +62,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcStats(
 			Graph<V, E> graph, boolean wcc, Hashtable<StatVal, Float> valStatH,
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
-		
+
 		System.out.printf("GraphStatistics:  G(%d, %d)\n", graph.vertexSet()
 				.size(), graph.edgeSet().size());
 		long FullTm = System.currentTimeMillis();
@@ -84,7 +89,6 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		System.out.printf("  [%s]\n", System.currentTimeMillis() - FullTm);
 
 	}
-
 
 	/**
 	 * Calculates the triangle participation
@@ -135,7 +139,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcClusteringCoefficient(
 			Graph<V, E> graph, int sampleNodes,
 			Hashtable<StatVal, Float> valStatH) {
-		
+
 		Triple<Float, Integer, Integer> t = Triangles.getClusteringCoefficient(
 				graph, sampleNodes);
 		valStatH.put(StatVal.gsvClustCf, t.v1);
@@ -188,7 +192,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			}
 		}
 		distrStatH.put(StatVal.gsdSngVecLeft, singularValuesVectorLeft);
-		
+
 		Vector<Pair<Float, Float>> singularValuesVectorRight = new Vector<Pair<Float, Float>>();
 		for (int i = 0; i < Math.min(10000, rightV.size() / 2); i++) {
 			if (rightV.get(i) > 0) {
@@ -211,9 +215,9 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	public static <V extends Comparable<V>, E> void calcConnectedComponents(
 			Graph<V, E> graph,
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
-		
+
 		logger.info("Calculate Weakly Connected Component");
-		
+
 		distrStatH.put(StatVal.gsdWcc,
 				ConnectivityInspector.getWccSizeCount(graph));
 
@@ -223,7 +227,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			distrStatH.put(StatVal.gsdWcc, StrongConnectivityInspector
 					.getSccSizeCnt((DirectedGraph<V, E>) graph));
 		}
-		
+
 	}
 
 	/**
@@ -267,11 +271,11 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
 
 		logger.info("Calculate Diameter");
-		
+
 		Moment effectiveDiameterMom = new Moment();
 		Moment fullDiameterMom = new Moment();
 		Moment averageDiameterMom = new Moment();
-		
+
 		Map<V, Integer> hops = null;
 		for (int r = 0; r < NDiamRuns; r++) {
 			double[] effectiveDiameter = { 0d };
@@ -327,7 +331,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			Graph<V, E> graph, boolean isMaxWcc,
 			Hashtable<StatVal, Float> valStatH) {
 		logger.info("Calculate Basic Statistics");
-		if (!isMaxWcc) {			
+		if (!isMaxWcc) {
 			final int size = graph.vertexSet().size();
 			valStatH.put(StatVal.gsvNodes, Float.valueOf(size));
 			valStatH.put(StatVal.gsvZeroNodes,
@@ -379,6 +383,204 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 						valStatH.get(StatVal.gsvWccEdges));
 			}
 		}
+	}
+
+	/**
+	 * Calculates a distribution of jaccard coefficients for all pairs that
+	 * share a node
+	 * 
+	 * @param graph
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> void calcJaccardCoefficient(
+			Graph<V, E> graph, int sampleNodes, Class<?> startType,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
+
+		Vector<Pair<Float, Float>> x = new Vector<Pair<Float, Float>>();
+		Randoms r = new Randoms();
+		List<Pair<V, V>> newEdges = new ArrayList<Pair<V, V>>();
+		// add random edges
+		List<V> nodes = new ArrayList<V>(graph.vertexSet());
+		Collections.shuffle(nodes);
+		for (int i = 0, j=0; i < sampleNodes && j<nodes.size(); j++) {
+			V v1 = nodes.get(j);
+			if(!v1.getClass().equals(startType)){
+				continue;
+			}
+			List<V> n = Graphs.neighborListOf(graph, v1);
+			if(n.size() == 0) continue;
+			V v2 = n.get(r.next(n.size()));
+			n = Graphs.neighborListOf(graph, v2);
+			if(n.remove(v1) != true) {
+				assert(false);
+			}
+			if(n.size() == 0) continue;
+			V v3 = n.get(r.next(n.size()));
+			newEdges.add(new Pair<V, V>(v1, v3));
+			i++;
+		}
+
+		//jacVals needs to be decreasing order
+		float[] jacVals = { 0.512f, 0.256f, 0.128f, 0.064f, 0.032f, 0.016f,
+				0.008f, 0.004f, 0.002f, 0.001f };
+		for (float f : jacVals) {
+			Float jccf = calcJaccardCoefficient(graph, f, newEdges);
+			x.add(new Pair<Float, Float>(f, jccf));
+		}
+
+		distrStatH.put(StatVal.gsdJacCoef, x);
+	}
+
+	/**
+	 * Calculates a distribution of jaccard coefficients for all pairs that
+	 * share a node
+	 * 
+	 * @param graph
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> Float calcJaccardCoefficient(
+			Graph<V, E> graph, Float cutoff, List<Pair<V, V>> edges) {
+
+		float i=0;
+		
+		for (Pair<V, V> p : edges) {
+			float jaccard = calcJaccardCoefficient(graph, p.p1, p.p2);
+			if (jaccard > cutoff) {				
+				i++;
+			}
+		}
+		return i/(float)edges.size();
+
+	}
+	
+	public static <V extends Comparable<V>, E> void calcJaccardAssortativity(
+			Graph<V, E> graph, int sampleNodes, Class<?> startType,
+			Hashtable<StatVal, Vector<Pair<Float, Float>>> distrStatH) {
+
+		Vector<Pair<Float, Float>> x = new Vector<Pair<Float, Float>>();
+		Randoms r = new Randoms();
+		List<Pair<V, V>> newEdges = new ArrayList<Pair<V, V>>();
+		// add random edges
+		List<V> nodes = new ArrayList<V>(graph.vertexSet());
+		Collections.shuffle(nodes);
+		for (int i = 0, j=0; i < sampleNodes && j<nodes.size(); j++) {
+			V v1 = nodes.get(j);
+			if(!v1.getClass().equals(startType)){
+				continue;
+			}
+			List<V> n = Graphs.neighborListOf(graph, v1);
+			if(n.size() == 0) continue;
+			V v2 = n.get(r.next(n.size()));
+			n = Graphs.neighborListOf(graph, v2);
+			if(n.remove(v1) != true) {
+				assert(false);
+			}
+			if(n.size() == 0) continue;
+			V v3 = n.get(r.next(n.size()));
+			newEdges.add(new Pair<V, V>(v1, v3));
+			i++;
+		}
+
+		//jacVals needs to be decreasing order
+		float[] jacVals = { 0.512f, 0.256f, 0.128f, 0.064f, 0.032f, 0.016f,
+				0.008f, 0.004f, 0.002f, 0.001f };
+		for (float f : jacVals) {
+			Float jccf = calcJaccardAssortativity(graph, f, newEdges);
+			x.add(new Pair<Float, Float>(f, jccf));
+		}
+
+		distrStatH.put(StatVal.gsdJacCoef, x);
+	}
+	
+	/**
+	 * Calculates assortativity with edges parameter and jaccard cutoff
+	 * 
+	 * @param graph
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> Float calcJaccardAssortativity(
+			Graph<V, E> graph, Float cutoff, List<Pair<V, V>> edges) { 
+
+		float m = graph.edgeSet().size();
+		float numerator = 0f;
+		float denominator = 0f;
+		
+		for (Pair<V, V> p : edges) {
+			float jaccard = calcJaccardCoefficient(graph, p.p1, p.p2);
+			if (jaccard > cutoff) {
+
+				float a_ij = 1f; // edge exists
+				float d_i = graph.edgesOf(p.p1).size();
+				float d_j = graph.edgesOf(p.p2).size();
+				float f_ij = 1f; // some measure/weight just 1 for now
+
+				numerator += (a_ij - ((d_i * d_j) / (2f * m))) * f_ij;
+				
+				
+				float delta_ij = 1; //edge exists
+				
+				
+				denominator += (d_i*delta_ij - ((d_i*d_j)/(2f*m))) * f_ij;
+
+			}
+		}
+		
+		return numerator/denominator;
+
+	}
+	
+	/**
+	 * Calculates assortativity all edges
+	 * 
+	 * @param graph
+	 * @return
+	 */
+	public static <V extends Comparable<V>, E> Float calcAssortativity(
+			Graph<V, E> graph, int sampleNodes) {
+
+		float m = graph.edgeSet().size();
+		float numerator = 0f;
+		
+		for (E e : graph.edgeSet()) {
+			float a_ij = 1f; // edge exists
+			float d_i = graph.edgesOf(graph.getEdgeSource(e)).size();
+			float d_j = graph.edgesOf(graph.getEdgeTarget(e)).size();
+			float f_ij = 1f; // some measure/weight just 1 for now
+			
+			numerator += (a_ij - ((d_i*d_j)/(2f*m))) * f_ij;
+		}
+		
+		float denominator = 0f;
+		
+		for (E e : graph.edgeSet()) {
+			float d_i = graph.edgesOf(graph.getEdgeSource(e)).size();
+			float delta_ij = 1; //edge exists
+			float d_j = graph.edgesOf(graph.getEdgeTarget(e)).size();
+			float f_ij = 1f; // some measure/weight just 1 for now
+			
+			denominator += (d_i*delta_ij - ((d_i*d_j)/(2f*m))) * f_ij;
+		}
+
+		return numerator/denominator;
+
+	}
+	
+	public static <V extends Comparable<V>, E> Float calcJaccardCoefficient(Graph<V,E> graph, V v1, V v2){
+		Set<V> s = new HashSet<V>();
+		List<V> n1 = Graphs.neighborListOf(graph, v1);
+		List<V> n2 = Graphs.neighborListOf(graph, v2);
+		s.addAll(n1);
+		float union = s.size();
+		float intersection = 0f;
+		for(V v : n2){
+			if(s.contains(v)){
+				intersection++;
+			}else{
+				union++;
+			}
+		}
+
+		return intersection / union;
 	}
 
 	/**

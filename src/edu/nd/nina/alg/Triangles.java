@@ -109,6 +109,7 @@ public class Triangles<V extends Comparable<V>, E> {
 		Vector<Triple<V, Integer, Integer>> nodeTriangleCount = new Vector<Triple<V, Integer, Integer>>();
 		
 		for (int node = 0; node < sampleNodes; node++) {
+			logger.info(node + "% of triangles");
 			V v = nodeV.get(node);
 			if (graph.edgesOf(v).size() < 2) {
 				// zero triangles

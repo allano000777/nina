@@ -64,6 +64,7 @@ public class DBLP {
 			paperType.add("phdthesis");
 			paperType.add("mastersthesis");
 			paperType.add("incollection");
+			paperType.add("www");
 			
 			venueType.add("journal");
 			venueType.add("booktitle");
@@ -83,7 +84,7 @@ public class DBLP {
 		private String key;
 		private String recordTag;
 		
-		int total = 3391788;
+		int total = 2160375;
 		int perc = 0;
 		int i=0;
 
@@ -93,6 +94,7 @@ public class DBLP {
 
 		public void startElement(String namespaceURI, String localName,
 				String rawName, Attributes atts) throws SAXException {
+
 
 			if(perc > 2) return;
 			
@@ -150,7 +152,7 @@ public class DBLP {
 				current.setTitle(Value);
 				String[] s = Value.split("\\W+");
 				for(String t : s){
-					currentTerms.add(new Term(t.toLowerCase()));
+					currentTerms.add(new Term(t));
 				}
 			}else if(rawName.equalsIgnoreCase("author")){
 				currentAuthors.add(new Author(Value));

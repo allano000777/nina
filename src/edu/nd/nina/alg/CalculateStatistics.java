@@ -254,6 +254,40 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	}
 
 	/**
+	 * Calculates the degree distribution
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param distrStatH
+	 *            table of result distributions
+	 */
+	public static <V extends Comparable<V>, E> void calcDegreeDistribution(
+			Graph<V, E> graph,
+			Hashtable<String, Vector<Pair<Float, Float>>> distrStatH,
+			Set<Class<?>> types) {
+
+		int i = 0;
+		for (Class<?> t1 : types) {
+			int j = 0;
+			for (Class<?> t2 : types) {
+				if (graph instanceof UndirectedGraph) {
+					if (i < j)
+						break;
+				}
+				logger.info("Count Indegree");
+				Vector<Pair<Float, Float>> indegreeV = countIndegree(graph, t1,
+						t2);
+				distrStatH.put("inDegree: " + t1.getSimpleName() + "-" + t2.getSimpleName(), indegreeV);
+
+				logger.info("Count Outdegree");
+				Vector<Pair<Float, Float>> outdegreeV = countOutdegree(graph,
+						t1, t2);
+				distrStatH.put("outDegree: " + t1.getSimpleName() + "-" + t2.getSimpleName(), outdegreeV);
+			}
+		}
+	}
+
+	/**
 	 * Calculate graph diameter
 	 * 
 	 * @param graph
@@ -315,6 +349,102 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		}
 		Collections.sort(hopCountV);
 		distrStatH.put(StatVal.gsdHops, hopCountV);
+	}
+
+	/**
+	 * Calculate basic graph statistics
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param isMaxWcc
+	 *            true if the graph is a WCC
+	 * @param valStatH
+	 *            table of results
+	 */
+	public static <V extends Comparable<V>, E> void calcBasicStat(
+			Graph<V, E> graph, boolean isMaxWcc,
+			Hashtable<String, Float> valStatH, Set<Class<?>> types) {
+		int i = 0;
+		for (Class<?> t1 : types) {
+			int j = 0;
+			for (Class<?> t2 : types) {
+				if (graph instanceof UndirectedGraph) {
+					if (i < j)
+						break;
+				}
+				logger.info("Calculate Basic Statistics: " + t1.getSimpleName() + " - " + t2.getSimpleName());
+				if (!isMaxWcc) {
+					final int size = graph.getAllMatchingType(t1).size();
+					valStatH.put("nodes: " + t1.getSimpleName() + "-" + t2.getSimpleName(), Float.valueOf(size));
+					valStatH.put("zeroNodes: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+							Float.valueOf(countNodesOfDegree(graph, 0, t1, t2)));
+					valStatH.put("nonZeroNodes: " + t1.getSimpleName() + "-" + t2.getSimpleName(), size
+							- valStatH.get("zeroNodes: " + t1.getSimpleName() + "-" + t2.getSimpleName()));
+					valStatH.put(
+							"srcNodes: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+							(float) (size - countNodesOfOutdegree(graph, 0, t1,
+									t2)));
+					valStatH.put(
+							"dstNodes: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+							(float) (size - countNodesOfIndegree(graph, 0, t1,
+									t2)));
+					valStatH.put("edges: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+							(float) countEdges(graph, t1, t2));
+					if (!(graph instanceof Multigraph)) {
+						valStatH.put("uniqEdges: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+								valStatH.get("edges: " + t1.getSimpleName() + "-" + t2.getSimpleName()));
+					} else {
+						valStatH.put("uniqEdges: " + t1.getSimpleName() + "-" + t2.getSimpleName(),
+								(float) countUniqueEdges(graph, t1, t2));
+					}
+
+					if (graph instanceof DirectedGraph) {
+						valStatH.put(
+								"bidiredges: " + t1 + "-" + t2,
+								(float) countUniqueBidirectionalEdges(graph,
+										t1, t2));
+					} else {
+						if ((graph instanceof Multigraph)) {
+							valStatH.put("uniqEdges: " + t1 + "-" + t2,
+									(float) countUniqueEdges(graph, t1, t2));
+						}
+					}
+				} else {
+
+					logger.info("Weakly Connected Component");
+					final int size = graph.vertexSet().size();
+					valStatH.put("wccNodes: " + t1 + "-" + t2,
+							Float.valueOf(size));
+					valStatH.put("wccZeroNodes: " + t1 + "-" + t2,
+							Float.valueOf(countNodesOfDegree(graph, 0)));
+					valStatH.put("wccNonZeroNodes: " + t1 + "-" + t2, size
+							- valStatH.get("zeroNodes"));
+					valStatH.put("wccSrcNodes: " + t1 + "-" + t2,
+							(float) (size - countNodesOfOutdegree(graph, 0)));
+					valStatH.put("wccDstNodes: " + t1 + "-" + t2,
+							(float) (size - countNodesOfIndegree(graph, 0)));
+					valStatH.put("wccEdges: " + t1 + "-" + t2, (float) graph
+							.edgeSet().size());
+					if (!(graph instanceof Multigraph)) {
+						valStatH.put("wccUniqEdges: " + t1 + "-" + t2,
+								(float) graph.edgeSet().size());
+					} else {
+						valStatH.put("wccUniqEdges: " + t1 + "-" + t2,
+								(float) countUniqueEdges(graph));
+					}
+
+					if (graph instanceof DirectedGraph) {
+						valStatH.put("wccBidiredges: " + t1 + "-" + t2,
+								(float) countUniqueBidirectionalEdges(graph));
+					} else {
+						if ((graph instanceof Multigraph)) {
+							valStatH.put("wccUniqEdges: " + t1 + "-" + t2,
+									(float) countUniqueEdges(graph));
+						}
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -614,6 +744,39 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	}
 
 	/**
+	 * Counts unique bidirectional edges: u->v && u<-v
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countUniqueBidirectionalEdges(
+			Graph<V, E> graph, Class<?> t1, Class<?> t2) {
+
+		if (!(graph instanceof DirectedGraph)) {
+			// then every edge is bi-directional
+			return countUniqueEdges((UndirectedGraph<V, E>) graph, t1, t2);
+		}
+
+		DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
+		int cnt = 0;
+		for (V v : dg.vertexSet()) {
+			if (v.getClass().equals(t1)) {
+				for (V t : Graphs.successorListOf(dg, v)) {
+					if (t.getClass().equals(t2)) {
+						if (dg.containsEdge(t, v)) {
+							cnt++;
+						}
+					}
+				}
+			}
+		}
+		return cnt;
+	}
+
+	/**
 	 * Count number of unique edges (if multigraph)
 	 * 
 	 * @param graph
@@ -628,6 +791,54 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			nbrSet.add(e);
 		}
 		count += nbrSet.size();
+		return count;
+	}
+
+	/**
+	 * Count number of unique edges (if multigraph)
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countUniqueEdges(
+			Graph<V, E> graph, Class<?> t1, Class<?> t2) {
+		Set<E> nbrSet = new HashSet<E>();
+		int count = 0;
+		for (E e : graph.edgeSet()) {
+			if ((graph.getEdgeSource(e).getClass().equals(t1) && graph
+					.getEdgeTarget(e).getClass().equals(t2))
+					|| (graph.getEdgeSource(e).getClass().equals(t2) && graph
+							.getEdgeTarget(e).getClass().equals(t1))) {
+				nbrSet.add(e);
+			}
+		}
+		count = nbrSet.size();
+		return count;
+	}
+
+	/**
+	 * Count number of unique edges (if multigraph)
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countEdges(
+			Graph<V, E> graph, Class<?> t1, Class<?> t2) {
+		int count = 0;
+		for (E e : graph.edgeSet()) {
+			if ((graph.getEdgeSource(e).getClass().equals(t1) && graph
+					.getEdgeTarget(e).getClass().equals(t2))
+					|| (graph.getEdgeSource(e).getClass().equals(t2) && graph
+							.getEdgeTarget(e).getClass().equals(t1))) {
+				count++;
+			}
+		}
 		return count;
 	}
 
@@ -666,6 +877,53 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	 *            Graph snapshot
 	 * @param outdegree
 	 *            outdegree size
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countNodesOfIndegree(
+			Graph<V, E> graph, int outdegree, Class<?> t1, Class<?> t2) {
+		int count = 0;
+		if (graph instanceof DirectedGraph) {
+			for (V v : graph.vertexSet()) {
+				if (v.getClass().equals(t1)) {
+					int z = 0;
+					for (V dst : Graphs.predecessorListOf(
+							((DirectedGraph<V, E>) graph), v)) {
+						if (dst.getClass().equals(t2)) {
+							z++;
+						}
+					}
+					if (z == outdegree) {
+						count++;
+					}
+				}
+			}
+		} else {
+			for (V v : graph.vertexSet()) {
+				if (v.getClass().equals(t1)) {
+					int z = 0;
+					for (V dst : Graphs.neighborListOf(graph, v)) {
+						if (dst.getClass().equals(t2)) {
+							z++;
+						}
+					}
+					if (z == outdegree) {
+						count++;
+					}
+				}
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * Count the number of nodes containing a certain outdegree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param outdegree
+	 *            outdegree size
 	 * @return count
 	 */
 	public static <V extends Comparable<V>, E> int countNodesOfOutdegree(
@@ -688,6 +946,53 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	}
 
 	/**
+	 * Count the number of nodes containing a certain outdegree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param outdegree
+	 *            outdegree size
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> int countNodesOfOutdegree(
+			Graph<V, E> graph, int outdegree, Class<?> t1, Class<?> t2) {
+		int count = 0;
+		if (graph instanceof DirectedGraph) {
+			for (V v : graph.vertexSet()) {
+				if (v.getClass().equals(t1)) {
+					int z = 0;
+					for (V dst : Graphs.successorListOf(
+							((DirectedGraph<V, E>) graph), v)) {
+						if (dst.getClass().equals(t2)) {
+							z++;
+						}
+					}
+					if (z == outdegree) {
+						count++;
+					}
+				}
+			}
+		} else {
+			for (V v : graph.vertexSet()) {
+				if (v.getClass().equals(t1)) {
+					int z = 0;
+					for (V dst : Graphs.neighborListOf(graph, v)) {
+						if (dst.getClass().equals(t2)) {
+							z++;
+						}
+					}
+					if (z == outdegree) {
+						count++;
+					}
+				}
+			}
+		}
+		return count;
+	}
+
+	/**
 	 * Count the number of nodes containing a certain degree
 	 * 
 	 * @param graph
@@ -703,6 +1008,36 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 			if (graph.edgesOf(v).size() == degree) {
 				count++;
 			}
+		}
+		return count;
+	}
+
+	/**
+	 * Count the number of nodes containing a certain degree
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param degree
+	 *            degree size
+	 * @param t1
+	 * @param t2
+	 * @return count
+	 */
+	public static <V extends Comparable<V>, E> Integer countNodesOfDegree(
+			Graph<V, E> graph, int degree, Class<?> t1, Class<?> t2) {
+		int count = 0;
+		for (V v : graph.vertexSet()) {
+			if (v.getClass().equals(t1)) {
+				int z = 0;
+				for (V dst : Graphs.neighborListOf(graph, v)) {
+					if (dst.getClass().equals(t2)) {
+						z++;
+					}
+				}
+				if (z == degree)
+					count++;
+			}
+
 		}
 		return count;
 	}
@@ -733,6 +1068,58 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 							degreeToCountH.get(graph.edgesOf(v).size()) + 1);
 				} else {
 					degreeToCountH.put(graph.edgesOf(v).size(), 1);
+				}
+			}
+
+		}
+		for (Entry<Integer, Integer> e : degreeToCountH.entrySet()) {
+			degreeToCountV.add(new Pair<Float, Float>((float) e.getKey(),
+					(float) e.getValue()));
+		}
+		Collections.sort(degreeToCountV);
+		return degreeToCountV;
+	}
+
+	/**
+	 * Count the indegree distribution of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param t1
+	 * @param t2
+	 * @return Vector<Pair<indegree, count>>
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> countIndegree(
+			Graph<V, E> graph, Class<?> t1, Class<?> t2) {
+		Vector<Pair<Float, Float>> degreeToCountV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> degreeToCountH = new Hashtable<Integer, Integer>();
+		for (V v : graph.vertexSet()) {
+			if (!v.getClass().equals(t1))
+				continue;
+			if (graph instanceof DirectedGraph) {
+				DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
+				int cnt = 0;
+				for (V t : Graphs.predecessorListOf(dg, v)) {
+					if (t.getClass().equals(t2)) {
+						cnt++;
+					}
+				}
+				if (degreeToCountH.containsKey(cnt)) {
+					degreeToCountH.put(cnt, degreeToCountH.get(cnt) + 1);
+				} else {
+					degreeToCountH.put(cnt, 1);
+				}
+			} else {
+				int cnt = 0;
+				for (V t : Graphs.neighborListOf(graph, v)) {
+					if (t.getClass().equals(t2)) {
+						cnt++;
+					}
+				}
+				if (degreeToCountH.containsKey(cnt)) {
+					degreeToCountH.put(cnt, degreeToCountH.get(cnt) + 1);
+				} else {
+					degreeToCountH.put(cnt, 1);
 				}
 			}
 
@@ -782,5 +1169,58 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		Collections.sort(degreeToCountV);
 		return degreeToCountV;
 	}
+	
+	/**
+	 * Count the indegree distribution of the graph
+	 * 
+	 * @param graph
+	 *            Graph snapshot
+	 * @param t1
+	 * @param t2
+	 * @return Vector<Pair<indegree, count>>
+	 */
+	public static <V extends Comparable<V>, E> Vector<Pair<Float, Float>> countOutdegree(
+			Graph<V, E> graph, Class<?> t1, Class<?> t2) {
+		Vector<Pair<Float, Float>> degreeToCountV = new Vector<Pair<Float, Float>>();
+		Hashtable<Integer, Integer> degreeToCountH = new Hashtable<Integer, Integer>();
+		for (V v : graph.vertexSet()) {
+			if (!v.getClass().equals(t1))
+				continue;
+			if (graph instanceof DirectedGraph) {
+				DirectedGraph<V, E> dg = (DirectedGraph<V, E>) graph;
+				int cnt = 0;
+				for (V t : Graphs.successorListOf(dg, v)) {
+					if (t.getClass().equals(t2)) {
+						cnt++;
+					}
+				}
+				if (degreeToCountH.containsKey(cnt)) {
+					degreeToCountH.put(cnt, degreeToCountH.get(cnt) + 1);
+				} else {
+					degreeToCountH.put(cnt, 1);
+				}
+			} else {
+				int cnt = 0;
+				for (V t : Graphs.neighborListOf(graph, v)) {
+					if (t.getClass().equals(t2)) {
+						cnt++;
+					}
+				}
+				if (degreeToCountH.containsKey(cnt)) {
+					degreeToCountH.put(cnt, degreeToCountH.get(cnt) + 1);
+				} else {
+					degreeToCountH.put(cnt, 1);
+				}
+			}
+
+		}
+		for (Entry<Integer, Integer> e : degreeToCountH.entrySet()) {
+			degreeToCountV.add(new Pair<Float, Float>((float) e.getKey(),
+					(float) e.getValue()));
+		}
+		Collections.sort(degreeToCountV);
+		return degreeToCountV;
+	}
+
 
 }

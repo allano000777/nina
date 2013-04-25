@@ -19,7 +19,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import edu.nd.nina.alg.CalculateStatistics;
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.types.dblp.Author;

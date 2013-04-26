@@ -51,6 +51,11 @@ import java.io.*;
 
 import java.util.*;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 import edu.nd.nina.*;
 import edu.nd.nina.util.*;
 
@@ -87,9 +92,10 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 	private Map<E, IntrusiveEdge> edgeMap;
 	private transient Set<E> unmodifiableEdgeSet = null;
 	private transient Set<V> unmodifiableVertexSet = null;
-	private Specifics specifics;
+	private transient Specifics specifics;
 	private boolean allowingMultipleEdges;
-
+	private Map<V, UndirectedEdgeContainer<V, E>> vertexMapUndirected;
+	private Map<V, DirectedEdgeContainer<V, E>> vertexMapDirected;
 	private transient TypeUtil<V> vertexTypeDecl = null;
 
 	// ~ Constructors
@@ -120,7 +126,8 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 		edgeFactory = ef;
 		allowingLoops = allowLoops;
 		allowingMultipleEdges = allowMultipleEdges;
-
+		vertexMapUndirected = new LinkedHashMap<V, UndirectedEdgeContainer<V, E>>();
+		vertexMapDirected = new LinkedHashMap<V, DirectedEdgeContainer<V, E>>();
 		specifics = createSpecifics();
 
 		this.edgeSetFactory = new ArrayListFactory<V, E>();
@@ -192,10 +199,11 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 		assertVertexExist(sourceVertex);
 		assertVertexExist(targetVertex);
 
-		//TODO containsEdge is very very slow. Consider a new way to do this.
-		//if (!allowingMultipleEdges && containsEdge(sourceVertex, targetVertex)) {
-		//	return null;
-		//}
+		// TODO containsEdge is very very slow. Consider a new way to do this.
+		// if (!allowingMultipleEdges && containsEdge(sourceVertex,
+		// targetVertex)) {
+		// return null;
+		// }
 
 		if (!allowingLoops && sourceVertex.equals(targetVertex)) {
 			throw new IllegalArgumentException(LOOPS_NOT_ALLOWED);
@@ -666,6 +674,11 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 		private transient Set<EE> unmodifiableIncoming = null;
 		private transient Set<EE> unmodifiableOutgoing = null;
 
+		private DirectedEdgeContainer() {
+			incoming = null;
+			outgoing = null;
+		}
+
 		DirectedEdgeContainer(EdgeSetFactory<VV, EE> edgeSetFactory, VV vertex) {
 			incoming = edgeSetFactory.createEdgeSet(vertex);
 			outgoing = edgeSetFactory.createEdgeSet(vertex);
@@ -739,11 +752,10 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 	 * 
 	 * @author Barak Naveh
 	 */
-	private class DirectedSpecifics extends Specifics implements Serializable {
+	private class DirectedSpecifics extends Specifics implements
+			KryoSerializable {
 		private static final long serialVersionUID = 8971725103718958232L;
 		private static final String NOT_IN_DIRECTED_GRAPH = "no such operation in a directed graph";
-
-		private Map<V, DirectedEdgeContainer<V, E>> vertexMapDirected = new LinkedHashMap<V, DirectedEdgeContainer<V, E>>();
 
 		public void addVertex(V v) {
 			// add with a lazy edge container entry
@@ -780,7 +792,8 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 		}
 
 		/**
-		 * @see Graph#getEdge(Object, Object) WARNING, this is very very expensive - TW
+		 * @see Graph#getEdge(Object, Object) WARNING, this is very very
+		 *      expensive - TW
 		 */
 		public E getEdge(V sourceVertex, V targetVertex) {
 			if (containsVertex(sourceVertex) && containsVertex(targetVertex)) {
@@ -904,6 +917,16 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 
 			return ec;
 		}
+
+		@Override
+		public void read(Kryo kryo, Input input) {
+			// eat
+		}
+
+		@Override
+		public void write(Kryo arg0, Output arg1) {
+			// eat
+		}
 	}
 
 	/**
@@ -917,11 +940,13 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 	 * 
 	 * @author Barak Naveh
 	 */
-	private static class UndirectedEdgeContainer<VV, EE> implements
-			Serializable {
-		private static final long serialVersionUID = -6623207588411170010L;
+	private static class UndirectedEdgeContainer<VV, EE> {
 		Set<EE> vertexEdges;
 		private transient Set<EE> unmodifiableVertexEdges = null;
+
+		private UndirectedEdgeContainer() {
+			vertexEdges = null;
+		}
 
 		UndirectedEdgeContainer(EdgeSetFactory<VV, EE> edgeSetFactory, VV vertex) {
 			vertexEdges = edgeSetFactory.createEdgeSet(vertex);
@@ -974,11 +999,10 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 	 * 
 	 * @author Barak Naveh
 	 */
-	private class UndirectedSpecifics extends Specifics implements Serializable {
+	private class UndirectedSpecifics extends Specifics implements
+			KryoSerializable {
 		private static final long serialVersionUID = 6494588405178655873L;
 		private static final String NOT_IN_UNDIRECTED_GRAPH = "no such operation in an undirected graph";
-
-		private Map<V, UndirectedEdgeContainer<V, E>> vertexMapUndirected = new LinkedHashMap<V, UndirectedEdgeContainer<V, E>>();
 
 		public void addVertex(V v) {
 			// add with a lazy edge container entry
@@ -1154,6 +1178,16 @@ public abstract class AbstractBaseGraph<V, E> extends AbstractGraph<V, E>
 			}
 
 			return ec;
+		}
+
+		@Override
+		public void read(Kryo kryo, Input input) {
+			// eat
+		}
+
+		@Override
+		public void write(Kryo arg0, Output arg1) {
+			// eat
 		}
 	}
 }

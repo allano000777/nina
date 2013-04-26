@@ -1,39 +1,37 @@
 package edu.nd.nina;
 
-
 /**
  * 
  * @author Tim Weninger
  * @since April 10, 2013
  */
 public abstract class Type implements Comparable<Type> {
-	protected String name;
-	
-	public Type(){
-		name = "";
-	}
 
-	public final String getName() {
-		return name;
-	};
-	
+	public abstract String getUniqueIdentifier();
+
 	public abstract String toString();
-	
-	@Override
-	public int compareTo(Type o) {
-		return toString().compareTo(o.toString());
+
+	protected Type() {
 	}
 
 	@Override
-	public int hashCode() {
+	public final int compareTo(Type o) {
+		return getUniqueIdentifier().compareTo(o.getUniqueIdentifier());
+	}
+
+	@Override
+	public final int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((toString() == null) ? 0 : toString().hashCode());
+		result = prime
+				* result
+				+ ((getUniqueIdentifier() == null) ? 0 : getUniqueIdentifier()
+						.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public final boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -41,10 +39,10 @@ public abstract class Type implements Comparable<Type> {
 		if (getClass() != obj.getClass())
 			return false;
 		Type other = (Type) obj;
-		if (name == null) {
-			if (other.name != null)
+		if (getUniqueIdentifier() == null) {
+			if (other.getUniqueIdentifier() != null)
 				return false;
-		} else if (!name.equals(other.name))
+		} else if (!getUniqueIdentifier().equals(other.getUniqueIdentifier()))
 			return false;
 		return true;
 	}

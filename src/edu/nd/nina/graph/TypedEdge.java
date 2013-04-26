@@ -1,5 +1,7 @@
 package edu.nd.nina.graph;
 
+import java.io.Serializable;
+
 import edu.nd.nina.Type;
 
 
@@ -8,11 +10,19 @@ import edu.nd.nina.Type;
  * @author Tim Weninger
  * @since April 10, 2013
  */
-public class TypedEdge
+public class TypedEdge implements Serializable
 {
-    Type source;
+
+	private static final long serialVersionUID = 3328934151457088562L;
+
+	Type source;
 
     Type target;
+    
+    public TypedEdge(){
+    	this.source = null;
+    	this.target = null;
+    }
     
     public TypedEdge(Type source, Type target){
     	this.source = source;

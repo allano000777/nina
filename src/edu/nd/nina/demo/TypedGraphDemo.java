@@ -54,61 +54,63 @@ import edu.nd.nina.types.dblp.Author;
 import edu.nd.nina.types.dblp.Paper;
 import edu.nd.nina.types.dblp.Venue;
 
+public final class TypedGraphDemo {
+	// ~ Static fields/initializers
+	// ---------------------------------------------
 
-public final class TypedGraphDemo
-{
-    //~ Static fields/initializers ---------------------------------------------
+	static TypedSimpleGraph typedGraph;
 
-    static TypedSimpleGraph typedGraph;
+	// Number of vertices
+	static int size = 10;
 
-    //Number of vertices
-    static int size = 10;
+	// ~ Methods
+	// ----------------------------------------------------------------
 
-    //~ Methods ----------------------------------------------------------------
-
-    public static void main(String [] args)
-    {
+	public static void main(String[] args) {
 
 		Map<Class<? extends Type>, Integer> types = new HashMap<Class<? extends Type>, Integer>();
 		List<Triple<Class<? extends Type>, Class<? extends Type>, TypedNetworkGenerator.TypeEdgeTopology>> generators = new ArrayList<Triple<Class<? extends Type>, Class<? extends Type>, TypedNetworkGenerator.TypeEdgeTopology>>();
 		List<Triple<Class<? extends Type>, Class<? extends Type>, Float>> edgeProb = new ArrayList<Triple<Class<? extends Type>, Class<? extends Type>, Float>>();
 
-        //Create the graph object; it is null at this point
-    	typedGraph = new TypedSimpleGraph(TypedEdge.class);
-    	
-    	types.put(Author.class, 100);
-    	types.put(Paper.class, 25);
-    	types.put(Venue.class, 10);
-    	
+		// Create the graph object; it is null at this point
+		typedGraph = new TypedSimpleGraph(TypedEdge.class);
 
-    	int i=0;
-    	for(Class<? extends Type> type1 : types.keySet()){
-    		int j=0;
-    		for(Class<? extends Type> type2 : types.keySet()){
-    			if(i>=j){
-    				j++;
-    				continue;
-    			}
-    			generators.add(new Triple<Class<? extends Type>, Class<? extends Type>, TypedNetworkGenerator.TypeEdgeTopology>(type1,type2, TypedNetworkGenerator.TypeEdgeTopology.scaleFree));
-    			edgeProb.add(new Triple<Class<? extends Type>, Class<? extends Type>, Float>(type1,type2, 0.22f));  	
-    			
-    		}
-    		i++;
-    	}
-    	
-    	//Create the CompleteGraphGenerator object
-        TypedNetworkGenerator<TypedEdge> typedGenerator =
-            new TypedNetworkGenerator<TypedEdge>(types, generators, edgeProb, 0);
-    	
+		types.put(Author.class, 100);
+		types.put(Paper.class, 25);
+		types.put(Venue.class, 10);
 
-        //Use the CompleteGraphGenerator object to make completeGraph a
-        //complete graph with [size] number of vertices
-        typedGenerator.generateGraph(typedGraph, null, null);
+		int i = 0;
+		for (Class<? extends Type> type1 : types.keySet()) {
+			int j = 0;
+			for (Class<? extends Type> type2 : types.keySet()) {
+				if (i >= j) {
+					j++;
+					continue;
+				}
+				generators
+						.add(new Triple<Class<? extends Type>, Class<? extends Type>, TypedNetworkGenerator.TypeEdgeTopology>(
+								type1,
+								type2,
+								TypedNetworkGenerator.TypeEdgeTopology.scaleFree));
+				edgeProb.add(new Triple<Class<? extends Type>, Class<? extends Type>, Float>(
+						type1, type2, 0.22f));
 
-        //Print out the graph 
-        PrintStatistics.PrintTypedGraphStatTable(typedGraph, "randomGraph", null);
-        
-        Save.saveToDot(typedGraph, "./data/dblp/typeGraph.dot");
-    }
+			}
+			i++;
+		}
+
+		// Create the CompleteGraphGenerator object
+		TypedNetworkGenerator<TypedEdge> typedGenerator = new TypedNetworkGenerator<TypedEdge>(
+				types, generators, edgeProb, 0);
+
+		// Use the CompleteGraphGenerator object to make completeGraph a
+		// complete graph with [size] number of vertices
+		typedGenerator.generateGraph(typedGraph, null, null);
+
+		// Print out the graph
+		PrintStatistics.PrintTypedGraphStatTable(typedGraph, "randomGraph",
+				null);
+
+		Save.saveToDot(typedGraph, "./data/dblp/typeGraph.dot");
+	}
 }
-

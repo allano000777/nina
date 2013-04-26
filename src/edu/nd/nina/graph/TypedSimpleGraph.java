@@ -19,6 +19,11 @@ public class TypedSimpleGraph
 
     //~ Constructors -----------------------------------------------------------
 
+    public TypedSimpleGraph()
+    {
+    	this(new ClassBasedEdgeFactory<Type, TypedEdge>(TypedEdge.class));
+    }
+    
     /**
      * Creates a new simple graph with the specified edge factory.
      *
@@ -34,7 +39,7 @@ public class TypedSimpleGraph
      *
      * @param edgeClass class on which to base factory for edges
      */
-    public TypedSimpleGraph(Class<? extends TypedEdge> edgeClass)
+    public TypedSimpleGraph(Class<TypedEdge> edgeClass)
     {
         this(new ClassBasedEdgeFactory<Type, TypedEdge>(edgeClass));
     }

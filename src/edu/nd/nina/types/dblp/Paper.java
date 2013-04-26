@@ -6,14 +6,15 @@ import java.util.Map;
 import edu.nd.nina.Type;
 
 public class Paper extends Type {
-	String index;
+	Integer index;
+	String name;
 	Integer citations;
 	
 	Map<String, String> attributes;
 	
 	public Paper(String title) {
 		this.name = title;
-		this.index = "";
+		this.index = -1;
 		attributes = new HashMap<String, String>();
 	}
 
@@ -22,11 +23,11 @@ public class Paper extends Type {
 		this.name = title;
 	}
 
-	public void setIdx(String index) {
+	public void setIdx(Integer index) {
 		this.index = index;
 	}
 
-	public String getIdx() {
+	public Integer getIdx() {
 		return index;
 	}
 	
@@ -44,6 +45,12 @@ public class Paper extends Type {
 
 	public String getAttribute(String name) {
 		return attributes.get(name);
+	}
+
+
+	@Override
+	public String getUniqueIdentifier() {
+		return name + "<Paper>" + index;
 	}
 
 

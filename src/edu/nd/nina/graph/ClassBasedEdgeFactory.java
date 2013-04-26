@@ -68,6 +68,11 @@ public class ClassBasedEdgeFactory<V, E>
 
     //~ Constructors -----------------------------------------------------------
 
+    public ClassBasedEdgeFactory()
+    {
+    	this.edgeClass = null;
+    }
+    
     public ClassBasedEdgeFactory(Class<? extends E> edgeClass)
     {
         this.edgeClass = edgeClass;

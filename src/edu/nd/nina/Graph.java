@@ -44,8 +44,6 @@
  */
 package edu.nd.nina;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -430,26 +428,19 @@ public interface Graph<V, E>
     public V getEdgeTarget(E e);
 
     /**
-     * Returns the weight assigned to a given edge. Unweighted graphs return 1.0
-     * (as defined by {@link WeightedGraph#DEFAULT_EDGE_WEIGHT}), allowing
-     * weighted-graph algorithms to apply to them where meaningful.
-     *
-     * @param e edge of interest
-     *
-     * @return edge weight
-     *
-     * @see WeightedGraph
-     */
-    public double getEdgeWeight(E e);
+	 * Returns the weight assigned to a given edge. Unweighted graphs return 1.0
+	 * (as defined by {@link WeightedGraph#DEFAULT_EDGE_WEIGHT}), allowing
+	 * weighted-graph algorithms to apply to them where meaningful.
+	 * 
+	 * @param e
+	 *            edge of interest
+	 * 
+	 * @return edge weight
+	 * 
+	 * @see WeightedGraph
+	 */
+	public double getEdgeWeight(E e);
 
-    
-    /**
-     * 
-     * @param f
-     * @param desc
-     * @throws IOException
-     */
-    public void save(File f, String desc) throws IOException;
 }
 
 // End Graph.java

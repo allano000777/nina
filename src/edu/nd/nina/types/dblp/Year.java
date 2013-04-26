@@ -4,12 +4,20 @@ import edu.nd.nina.Type;
 
 public class Year extends Type {
 	
-	public Year(String year) {
-		this.name = year;
+	private Integer year;
+
+	public Year(Integer year) {
+		this.year = year;
 	}
 	
+	@Override
 	public String toString(){
-		return name + "<Year>";
+		return year + "<Year>";
+	}
+
+	@Override
+	public String getUniqueIdentifier() {
+		return year + "<Year>";
 	}
 
 }

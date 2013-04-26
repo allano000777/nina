@@ -97,3 +97,11 @@ intended to save you the trouble of coding them.
 
 The concurrent library is in public domain. See http://gee.cs.oswego.edu/dl/
 classes/EDU/oswego/cs/dl/util/concurrent/intro.html for more information.
+
+--------------------------------
+kryo-2.21-all.jar (version 2.21.0)
+--------------------------------
+Kryo is a fast and efficient object graph serialization framework for Java. The goals of the project are speed, efficiency, and an easy to use API. The project is useful any time objects need to be persisted, whether to a file, database, or over the network.
+
+The library is in public domain. See https://code.google.com/p/kryo/
+for more information.

@@ -39,7 +39,7 @@ public class ForestFire {
 			ff.generateGraph(g, new IntegerVertexFactory(-1), null);
 			File f = new File(OutFNm);
 			f.getParentFile().mkdirs();
-			g.save(f, ff.getParamString());
+			//g.save(f, ff.getParamString());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

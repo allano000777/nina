@@ -124,13 +124,10 @@ public class DBLP {
 			if(perc > 2) return;
 			
 			if(paperType.contains(rawName)){
-				if(current.getName().equals("Convergence Results on Proximal Method of Multipliers in Nonconvex Programming")){
-					System.out.println();
-				}
 				int i=0;
 				while(tsg.containsVertex(current)){
 					i++;
-					current.setIdx(String.valueOf(i));
+					current.setIdx(i);
 				}
 				tsg.addVertex(current);
 				if(currentVenue == null){

@@ -90,13 +90,13 @@ public class ArnetMiner {
 						authors.add(a);						
 					}
 				}else if(line.startsWith("#year")){
-					year = new Year(line.substring(5));					
+					year = new Year(Integer.parseInt(line.substring(5)));					
 				}else if(line.startsWith("#conf")){
 					v = new Venue(line.substring(5));					
 				}else if(line.startsWith("#citation")){
 					paper.setCitations(line.substring(9));
 				}else if(line.startsWith("#index")){
-					paper.setIdx(line.substring(6));
+					paper.setIdx(Integer.parseInt(line.substring(6)));
 					tsg.addVertex(paper);
 					for(Author a : authors){
 						tsg.addVertex(a);

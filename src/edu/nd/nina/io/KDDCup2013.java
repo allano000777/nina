@@ -16,6 +16,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import edu.nd.nina.alg.MetaPathClus;
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.types.kddcup2013.Affiliation;
@@ -52,6 +53,8 @@ public class KDDCup2013 {
 			")                         ", // stop positive look ahead
 			otherThanQuote, quotedString, otherThanQuote);
 
+	private static File valid = null;
+	
 	private static void loadKDDCupGraphFromFolder(File dataFolder,
 			TypedSimpleGraph tsg) throws IOException {
 
@@ -69,6 +72,7 @@ public class KDDCup2013 {
 		File paperAuthor = new File(dataFolder.getAbsolutePath() + "\\"
 				+ "PaperAuthor.csv");
 		File train = new File(dataFolder.getAbsolutePath() + "\\" + "Train.csv");
+		valid = new File(dataFolder.getAbsolutePath() + "\\" + "Valid.csv");
 
 				
 		
@@ -81,7 +85,7 @@ public class KDDCup2013 {
 		while ((line = br.readLine()) != null) {
 			String[] authorline = line.split(csvregex);
 			Author a;
-			if (authorline.length == 2) {
+			if (authorline.length >= 2) {
 				a = new Author(Integer.parseInt(authorline[0]), authorline[1]);
 			} else {
 				a = new Author(Integer.parseInt(authorline[0]), "");
@@ -182,9 +186,9 @@ public class KDDCup2013 {
 			String[] pline = line.split(csvregex);
 			Paper p;
 			if (pline.length == 6) {
-				p = new Paper(Integer.parseInt(pline[0]), pline[1].replaceAll("\"", ""), pline[5]);
+				p = new Paper(Integer.parseInt(pline[0]), pline[1].replaceAll("\"", "").toLowerCase(), pline[5]);
 			} else {
-				p = new Paper(Integer.parseInt(pline[0]), pline[1].replaceAll("\"", ""), null);
+				p = new Paper(Integer.parseInt(pline[0]), pline[1].replaceAll("\"", "").toLowerCase(), null);
 			}
 			paperMap.put(Integer.parseInt(pline[0]), p);
 			tsg.addVertex(p);
@@ -235,7 +239,7 @@ public class KDDCup2013 {
 		br = new BufferedReader(new FileReader(paperAuthor));
 		line = "";
 
-		count=1000000;
+		count=10000000;
 		i=0;
 		perc = 0;
 
@@ -343,8 +347,12 @@ public class KDDCup2013 {
 			// PrintStatistics.PrintCrazyCCF(tsg, "./data/dblp/testStats",
 			// "DBLPTypedGraph");
 			// CalculateStatistics.calcAssortativity(tsg, -1);
-			PrintStatistics.PrintCrazyAssortativity(tsg,
-					"./data/kddcup2013/testStats", "DBLPTypedGraph");
+			//PrintStatistics.PrintCrazyAssortativity(tsg,
+			//		"./data/kddcup2013/testStats", "DBLPTypedGraph");
+			
+			MetaPathClus mpc = new MetaPathClus(tsg);
+			Author a = new Author(1969889, "Alon Y. Halevy");
+			mpc.go(a);
 
 			if (!serial.exists()) {
 				// Object serialization

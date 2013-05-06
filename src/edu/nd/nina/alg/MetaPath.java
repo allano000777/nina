@@ -6,12 +6,21 @@ import edu.nd.nina.Type;
 
 public class MetaPath {
 	private Type start = null;
+	private Type end = null;
 	private ArrayList<Class<? extends Type>> metaPath = null;
+	
+	public MetaPath(Type start, Type end){
+		this.start = start;
+		this.end = end;
+		metaPath = new ArrayList<Class<? extends Type>>();
+	}
 	
 	public MetaPath(Type start){
 		this.start = start;
+		this.end = null;
 		metaPath = new ArrayList<Class<? extends Type>>();
 	}
+	
 	
 	public void addToPath(Class<? extends Type> claz){
 		metaPath.add(claz);
@@ -25,8 +34,12 @@ public class MetaPath {
 		return start;
 	}
 	
+	public Type getEnd(){
+		return end;
+	}
+	
 	public boolean matches(MetaPath mp, Class<? extends Type> n) {
-		MetaPath path = new MetaPath(mp.start);
+		MetaPath path = new MetaPath(mp.start, mp.end);
 		path.metaPath = (ArrayList)mp.metaPath.clone();
 		path.addToPath(n);
 		
@@ -51,6 +64,10 @@ public class MetaPath {
 
 	public boolean matchesFully(MetaPath path) {
 		if(!start.equals(path.start)){
+			return false;
+		}
+		
+		if(end != null && !end.equals(path.end)){
 			return false;
 		}
 		

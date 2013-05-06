@@ -31,7 +31,7 @@ public class MetaPathClus {
 		mp.addToPath(Venue.class);
 		mp.addToPath(Paper.class);
 		mp.addToPath(Author.class);
-		Map<Type, Integer> count = crwr.pathCount(a, mp);
+		Map<Type, Integer> count = crwr.pathCount(mp);
 		Integer normCountA = pathNormCount.get(a);
 		pathNormCount.put(a, normCountA);
 		if (normCountA == null) {

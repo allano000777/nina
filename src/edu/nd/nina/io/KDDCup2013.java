@@ -8,22 +8,37 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
+
+import cc.mallet.classify.Classifier;
+import cc.mallet.classify.ClassifierTrainer;
+import cc.mallet.classify.NaiveBayesTrainer;
+import cc.mallet.pipe.Array2FeatureVector;
+import cc.mallet.pipe.Pipe;
+import cc.mallet.pipe.SerialPipes;
+import cc.mallet.pipe.Target2Label;
+import cc.mallet.types.Instance;
+import cc.mallet.types.InstanceList;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import edu.nd.nina.alg.MetaPathClus;
+import edu.nd.nina.Graphs;
+import edu.nd.nina.Type;
+import edu.nd.nina.alg.ConstrainedRandomWalkWithRestart;
+import edu.nd.nina.alg.MetaPath;
 import edu.nd.nina.graph.TypedEdge;
 import edu.nd.nina.graph.TypedSimpleGraph;
 import edu.nd.nina.types.kddcup2013.Affiliation;
 import edu.nd.nina.types.kddcup2013.Author;
 import edu.nd.nina.types.kddcup2013.AuthorAlsoKnownAs;
-import edu.nd.nina.types.kddcup2013.Confirmed;
-import edu.nd.nina.types.kddcup2013.Deleted;
 import edu.nd.nina.types.kddcup2013.Paper;
 import edu.nd.nina.types.kddcup2013.Term;
 import edu.nd.nina.types.kddcup2013.Venue;
@@ -53,14 +68,23 @@ public class KDDCup2013 {
 			")                         ", // stop positive look ahead
 			otherThanQuote, quotedString, otherThanQuote);
 
-	private static File valid = null;
+	private static File dataFolder = new File("./data/kddcup2013/");
+	private static File serial = new File(dataFolder, "serial.bin");
+	private static File serialMap = new File(dataFolder, "serialMap.bin");
+	
+	private static File valid = new File(dataFolder.getAbsolutePath() + "\\" + "Valid.csv");
+	private static File train = new File(dataFolder.getAbsolutePath() + "\\" + "Train.csv");
+	
+	private static Map<Integer, Author> authorMap = new HashMap<Integer, Author>();
+	private static Map<Integer, Paper> paperMap = new HashMap<Integer, Paper>();
+	private static Map<Integer, Venue> venueMap = new HashMap<Integer, Venue>();
+	
+	
 	
 	private static void loadKDDCupGraphFromFolder(File dataFolder,
 			TypedSimpleGraph tsg) throws IOException {
 
-		Map<Integer, Paper> paperMap = new HashMap<Integer, Paper>();
-		Map<Integer, Venue> venueMap = new HashMap<Integer, Venue>();
-		Map<Integer, Author> authorMap = new HashMap<Integer, Author>();
+		
 
 		File author = new File(dataFolder.getAbsolutePath() + "\\"
 				+ "Author.csv");
@@ -71,7 +95,8 @@ public class KDDCup2013 {
 		File paper = new File(dataFolder.getAbsolutePath() + "\\" + "sanitizedPaper.csv");
 		File paperAuthor = new File(dataFolder.getAbsolutePath() + "\\"
 				+ "PaperAuthor.csv");
-		File train = new File(dataFolder.getAbsolutePath() + "\\" + "Train.csv");
+		
+		
 		valid = new File(dataFolder.getAbsolutePath() + "\\" + "Valid.csv");
 
 				
@@ -239,7 +264,7 @@ public class KDDCup2013 {
 		br = new BufferedReader(new FileReader(paperAuthor));
 		line = "";
 
-		count=10000000;
+		count=12000000;
 		i=0;
 		perc = 0;
 
@@ -279,36 +304,7 @@ public class KDDCup2013 {
 		br.close();
 
 		// load train
-		br = new BufferedReader(new FileReader(train));
-		line = "";
-
-		br.readLine(); // eat the first line
-		Confirmed c = new Confirmed();
-		Deleted d = new Deleted();
-		tsg.addVertex(c);
-		tsg.addVertex(d);
-		// authorid, confirmedpaperid, deletedpaperid
-		while ((line = br.readLine()) != null) {
-			String[] tline = line.split(csvregex);
-			Author a = authorMap.get(Integer.parseInt(tline[0]));
-			if(a == null) continue;
-			
-			for (String pid : tline[1].split(" ")) {
-				Integer p = Integer.parseInt(pid);
-				if(!paperMap.containsKey(p)) continue;
-				tsg.addEdge(a, c);
-				tsg.addEdge(c, paperMap.get(p));
-			}
-
-			for (String pid : tline[2].split(" ")) {
-				Integer p = Integer.parseInt(pid);
-				if(!paperMap.containsKey(p)) continue;
-				tsg.addEdge(a, d);
-				tsg.addEdge(d, paperMap.get(p));
-			}
-
-		}
-		br.close();
+		
 
 	}
 	
@@ -321,9 +317,9 @@ public class KDDCup2013 {
 	}
 
 	public static void main(String[] args) {
-		File dataFolder = new File("./data/kddcup2013/");
-		File serial = new File("serial.bin");
+		
 		TypedSimpleGraph tsg = null;// = new TypedSimpleGraph(TypedEdge.class);
+		List<Map<Integer, ? extends Type>> mapList = null;
 		Kryo kryo = new Kryo();
 		try {
 			NINALogger.setup();
@@ -331,8 +327,14 @@ public class KDDCup2013 {
 			if (serial.exists()) {
 				try {
 					Input input = new Input(new FileInputStream(serial));
+					Input inputMap = new Input(new FileInputStream(serialMap));
 					tsg = kryo.readObject(input, TypedSimpleGraph.class);
+					mapList = kryo.readObject(inputMap, ArrayList.class);
+					authorMap = (Map<Integer, Author>) mapList.get(0);
+					paperMap = (Map<Integer, Paper>) mapList.get(1);
+					venueMap = (Map<Integer, Venue>) mapList.get(2);
 					input.close();
+					inputMap.close();
 				} catch (Exception e) {
 					System.out
 							.println("Exception during deserialization: " + e);
@@ -342,24 +344,202 @@ public class KDDCup2013 {
 				tsg = new TypedSimpleGraph(TypedEdge.class);
 				loadKDDCupGraphFromFolder(dataFolder, tsg);
 			}
-			// PrintStatistics.PrintTypedGraphStatTable(tsg,
-			// "./data/dblp/testStats", "DBLPTypedGraph");
-			// PrintStatistics.PrintCrazyCCF(tsg, "./data/dblp/testStats",
-			// "DBLPTypedGraph");
-			// CalculateStatistics.calcAssortativity(tsg, -1);
-			//PrintStatistics.PrintCrazyAssortativity(tsg,
-			//		"./data/kddcup2013/testStats", "DBLPTypedGraph");
-			
-			MetaPathClus mpc = new MetaPathClus(tsg);
-			Author a = new Author(1969889, "Alon Y. Halevy");
-			mpc.go(a);
 
+			
+			
+			ConstrainedRandomWalkWithRestart crwr = new ConstrainedRandomWalkWithRestart(
+					tsg, 0.15f);
+			
+			//for each training pair
+			BufferedReader br = new BufferedReader(new FileReader(train));
+			String line = "";
+			
+			br.readLine(); // eat the first line
+			
+			
+			// Create the pipeline that will take as input {data = File, target
+			// = String for classname}
+			// and turn them into {data = FeatureVector, target = Label}
+			Pipe instancePipe = new SerialPipes(new Pipe[] {
+					new Target2Label(), 
+					new Array2FeatureVector() }
+			);
+
+			// Create an empty list of the training instances
+			InstanceList ilist = new InstanceList (instancePipe);
+			
+			int count=3740;
+			int i=0;
+			int perc = 0;
+			
+			// authorid, confirmedpaperid, deletedpaperid
+			while ((line = br.readLine()) != null) {
+				
+				if(perc < (++i/(float)count)*100){
+					logger.info(++perc + "%");
+				}
+				if(perc > 4) break;
+				
+				
+				String[] tline = line.split(csvregex);				
+				Author a = authorMap.get(Integer.parseInt(tline[0]));
+				if(a == null) continue;
+				
+				MetaPath mp = new MetaPath(a);
+				mp.addToPath(Paper.class);
+				Map<Type, Integer> ap = crwr.pathCount(mp);
+				
+				mp = new MetaPath(a);			
+				mp.addToPath(Paper.class);
+				mp.addToPath(Term.class);
+				mp.addToPath(Paper.class);
+				Map<Type, Integer> aptp = crwr.pathCount(mp);
+				
+				
+				for (String pid : tline[1].split(" ")) {
+					Integer pi = Integer.parseInt(pid);					
+					Paper p = paperMap.get(pi);
+					if(p == null) continue;
+					//a -> p = 1
+					
+					Integer apI = ap.get(p);								
+					Integer aptpI = aptp.get(p);
+					
+					ilist.addThruPipe (new Instance(new double[] {apI, aptpI}, 1, "wtf", "wtfSource"));
+					
+				}
+
+				for (String pid : tline[2].split(" ")) {
+					Integer pi = Integer.parseInt(pid);
+					Paper p = paperMap.get(pi);
+					if(p == null) continue;
+					//a -> p = 0
+					
+					Integer apI = ap.get(p);										
+					Integer aptpI = aptp.get(p);
+					
+					ilist.addThruPipe (new Instance(new double[] {apI, aptpI}, 1, "wtf", "wtfSource"));
+				}
+
+			}
+			br.close();
+		
+			// Create a classifier trainer, and use it to create a classifier
+			ClassifierTrainer naiveBayesTrainer = new NaiveBayesTrainer ();
+			Classifier classifier = naiveBayesTrainer.train (ilist);
+			
+			System.out.println ("The training accuracy is "+ classifier.getAccuracy (ilist));
+			
+	
+
+			
+			//
+			//
+			//
+			//
+			//
+			//			
+			
+			
+			
+			
+			//for each training pair
+			br = new BufferedReader(new FileReader(valid));
+			line = "";
+			
+			br.readLine(); // eat the first line
+			
+
+			// Create an empty list of the training instances
+			InstanceList ilistTest = new InstanceList (instancePipe);
+			
+			count=1497;
+			i=0;
+			perc = 0;
+			
+			// authorid, confirmedpaperid, deletedpaperid
+			while ((line = br.readLine()) != null) {
+				
+				if(perc < (++i/(float)count)*100){
+					logger.info(++perc + "%");
+				}
+				if(perc > 4) break;
+				
+				
+				String[] tline = line.split(csvregex);				
+				Author a = authorMap.get(Integer.parseInt(tline[0]));
+				if (a == null)
+					continue;
+				
+				Set<Paper> validandChecked = new HashSet<Paper>();
+				MetaPath mp = new MetaPath(a);
+				mp.addToPath(Paper.class);
+				Map<Type, Integer> ap = crwr.pathCount(mp);
+
+				mp = new MetaPath(a);
+				mp.addToPath(Paper.class);
+				mp.addToPath(Term.class);
+				mp.addToPath(Paper.class);
+				Map<Type, Integer> aptp = crwr.pathCount(mp);
+				
+				
+				for (String pid : tline[1].split(" ")) {
+					Integer pi = Integer.parseInt(pid);					
+					Paper p = paperMap.get(pi);
+					if(p == null) continue;
+					//a -> p = 1
+					
+					
+					Integer apI = ap.get(p);								
+					Integer aptpI = aptp.get(p);
+										
+					
+					ilistTest.addThruPipe (new Instance(new double[] {apI, aptpI}, 1, "wtf", "wtfSource"));
+					validandChecked.add(p);
+				}
+				
+				
+				for (Type t : Graphs.neighborListOf(tsg, a)) {
+					if(! (t instanceof Paper)) continue;
+
+					Paper p = (Paper)t;
+					if(validandChecked.contains(p)) continue;
+					
+					
+
+					Integer apI = ap.get(p);								
+					Integer aptpI = aptp.get(p);
+					
+					ilistTest.addThruPipe (new Instance(new double[] {apI, aptpI}, 0, "wtf", "wtfSource"));				
+					
+				}
+				
+				
+
+			}
+			br.close();
+		
+			
+			System.out.println ("The testing accuracy is "+ classifier.getAccuracy (ilistTest));
+			
+			
+			
+			
+			
+			
 			if (!serial.exists()) {
 				// Object serialization
 				try {
 					Output output = new Output(new FileOutputStream(serial));
+					Output outputMap = new Output(new FileOutputStream(serialMap));
 					kryo.writeObject(output, tsg);
+					List<Map<Integer, ? extends Type>> o = new ArrayList<Map<Integer, ? extends Type>>();
+					o.add(authorMap);
+					o.add(paperMap);
+					o.add(venueMap);
+					kryo.writeObject(outputMap, o);
 					output.close();
+					outputMap.close();
 				} catch (Exception e) {
 					System.out.println("Exception during serialization: " + e);
 					System.exit(0);

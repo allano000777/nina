@@ -20,11 +20,11 @@ public class ConstrainedRandomWalkWithRestart {
 		this.tsg = tsg;
 	}
 
-	public Map<Type, Integer> pathCount(Type start, MetaPath constraint) {
+	public Map<Type, Integer> pathCount(MetaPath constraint) {
 		Map<Type, Integer> pathCount = new HashMap<Type, Integer>();
 		// start recursion Graphs.neighborListOf(tsg, start);
-		MetaPath mp = new MetaPath(start);
-		pathCount(tsg, start, constraint, mp, pathCount);
+		MetaPath mp = new MetaPath(constraint.getStart(), constraint.getEnd());
+		pathCount(tsg, mp.getStart(), constraint, mp, pathCount);
 
 		return pathCount;
 

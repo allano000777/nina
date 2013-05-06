@@ -25,6 +25,7 @@ import cc.mallet.pipe.SerialPipes;
 import cc.mallet.pipe.Target2Label;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
+import cc.mallet.types.Labeling;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -418,7 +419,7 @@ public class KDDCup2013 {
 					Integer apI = ap.get(p);										
 					Integer aptpI = aptp.get(p);
 					
-					ilist.addThruPipe (new Instance(new double[] {apI, aptpI}, 1, "wtf", "wtfSource"));
+					ilist.addThruPipe (new Instance(new double[] {apI, aptpI}, 0, "wtf", "wtfSource"));
 				}
 
 			}
@@ -448,17 +449,14 @@ public class KDDCup2013 {
 			line = "";
 			
 			br.readLine(); // eat the first line
-			
-
-			// Create an empty list of the training instances
-			InstanceList ilistTest = new InstanceList (instancePipe);
-			
+	
 			count=1497;
 			i=0;
 			perc = 0;
 			
 			// authorid, confirmedpaperid, deletedpaperid
-			while ((line = br.readLine()) != null) {
+			while ((line = br.readLine()) != null) {				
+				
 				
 				if(perc < (++i/(float)count)*100){
 					logger.info(++perc + "%");
@@ -471,7 +469,6 @@ public class KDDCup2013 {
 				if (a == null)
 					continue;
 				
-				Set<Paper> validandChecked = new HashSet<Paper>();
 				MetaPath mp = new MetaPath(a);
 				mp.addToPath(Paper.class);
 				Map<Type, Integer> ap = crwr.pathCount(mp);
@@ -482,47 +479,39 @@ public class KDDCup2013 {
 				mp.addToPath(Paper.class);
 				Map<Type, Integer> aptp = crwr.pathCount(mp);
 				
-				
-				for (String pid : tline[1].split(" ")) {
-					Integer pi = Integer.parseInt(pid);					
-					Paper p = paperMap.get(pi);
-					if(p == null) continue;
-					//a -> p = 1
-					
-					
-					Integer apI = ap.get(p);								
-					Integer aptpI = aptp.get(p);
-										
-					
-					ilistTest.addThruPipe (new Instance(new double[] {apI, aptpI}, 1, "wtf", "wtfSource"));
-					validandChecked.add(p);
-				}
-				
+				System.out.print(a.getUniqueIdentifier() + ",");
+				List<Integer> negClass = new ArrayList<Integer>(); 
 				
 				for (Type t : Graphs.neighborListOf(tsg, a)) {
 					if(! (t instanceof Paper)) continue;
 
 					Paper p = (Paper)t;
-					if(validandChecked.contains(p)) continue;
-					
-					
+				
 
 					Integer apI = ap.get(p);								
 					Integer aptpI = aptp.get(p);
 					
-					ilistTest.addThruPipe (new Instance(new double[] {apI, aptpI}, 0, "wtf", "wtfSource"));				
+					InstanceList iListTest = new InstanceList(instancePipe);
+					iListTest.addThruPipe(new Instance(new double[] {apI, aptpI}, 0, "wtf", "wtfSource"));
+					
+					Labeling l = classifier.classify(iListTest).get(0).getLabeling();				
+					if(l.getBestLabel().getEntry().equals(1)){
+						System.out.print(p.getId() + " ");
+					}else{
+						negClass.add(p.getId());
+					}
 					
 				}
+				
+				for(Integer neg : negClass){
+					System.out.print(neg + " ");
+				}
+				System.out.println();
 				
 				
 
 			}
-			br.close();
-		
-			
-			System.out.println ("The testing accuracy is "+ classifier.getAccuracy (ilistTest));
-			
-			
+			br.close();		
 			
 			
 			

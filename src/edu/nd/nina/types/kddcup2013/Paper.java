@@ -20,6 +20,10 @@ public class Paper extends Type{
 		this.keywords = keywords;
 	}
 	
+	public Integer getId(){
+		return id;
+	}
+	
 	@Override
 	public String toString() {
 		return title + " (" + id + ")";

@@ -1,10 +1,15 @@
 package edu.nd.nina.io;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.Graph;
+import edu.nd.nina.graph.ClassBasedEdgeFactory;
+import edu.nd.nina.graph.SimpleGraph;
 
 public class EdgeList {
 	public static <V extends Comparable<V>, E> void save(Graph<V, E> graph,
@@ -40,5 +45,42 @@ public class EdgeList {
 					graph.getEdgeTarget(e));
 		}
 		pw.close();
+	}
+	
+	
+	public static <V extends Comparable<V>, E> Graph<V, E> load(
+			String fileName, String desc) {
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(fileName));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		String line = "";
+		
+		SimpleGraph<V,E> graph = new SimpleGraph<V,E>(new ClassBasedEdgeFactory<V,E>());
+		
+		try {
+			while((line = br.readLine()) != null){
+				String[] lineDiv = line.split("\t");
+				
+				V src = (V) lineDiv[0];
+				V dest = (V) lineDiv[1];
+				
+				graph.addVertex(src);
+				graph.addVertex(dest);
+				graph.addEdge(src, dest);
+				
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return graph;
 	}
 }

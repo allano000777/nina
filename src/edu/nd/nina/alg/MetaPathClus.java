@@ -35,14 +35,14 @@ public class MetaPathClus {
 		Integer normCountA = pathNormCount.get(a);
 		pathNormCount.put(a, normCountA);
 		if (normCountA == null) {
-			normCountA = crwr.pathNormCount(a, mp);
+			normCountA = crwr.pathNormCount(mp);
 		}
 		Map<Type, Float> normCount = new HashMap<Type, Float>();
 		for (Type z : count.keySet()) {
 			Integer normCountB = pathNormCount.get(z);
 			if (normCountB == null) {
 				mp.setStart(z);
-				normCountB = crwr.pathNormCount(z, mp);
+				normCountB = crwr.pathNormCount(mp);
 				pathNormCount.put(z, normCountB);
 			}
 			Integer x = count.get(z);
@@ -50,7 +50,7 @@ public class MetaPathClus {
 		}
 		mp.setStart(a);
 
-		Map<Type, Moment> rw = crwr.randomWalk(a, mp);
+		Map<Type, Moment> rw = crwr.randomWalk(mp);
 		System.out.println(a + " -> ");
 		IntValueComparator bvc = new IntValueComparator(count);
 		SortedMap<Type, Integer> sortedCount = new TreeMap<Type, Integer>(bvc);

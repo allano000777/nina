@@ -43,7 +43,6 @@ package edu.nd.nina.graph;
 
 import edu.nd.nina.DirectedGraph;
 import edu.nd.nina.EdgeFactory;
-import edu.nd.nina.graph.load.LoadFromFeatureGraph;
 import edu.nd.nina.graph.load.Pipe;
 import edu.nd.nina.types.Instance;
 import edu.nd.nina.types.InstanceList;
@@ -72,8 +71,8 @@ public class DirectedFeatureGraph<V extends Instance, E> extends AbstractBaseGra
 	 * @param edgeClass
 	 *            class on which to base factory for edges
 	 */
-	public DirectedFeatureGraph(Class<? extends E> edgeClass) {
-		this(new ClassBasedEdgeFactory<V, E>(edgeClass));
+	public DirectedFeatureGraph(Class<? extends E> edgeClass, Pipe p) {
+		this(new ClassBasedEdgeFactory<V, E>(edgeClass), p);
 	}
 
 	/**
@@ -82,9 +81,8 @@ public class DirectedFeatureGraph<V extends Instance, E> extends AbstractBaseGra
 	 * @param ef
 	 *            the edge factory of the new graph.
 	 */
-	public DirectedFeatureGraph(EdgeFactory<V, E> ef) {
+	public DirectedFeatureGraph(EdgeFactory<V, E> ef, Pipe p) {
 		super(ef, false, true);
-		Pipe p = LoadFromFeatureGraph.createPipe();
 		instances = new InstanceList(p);
 	}
 

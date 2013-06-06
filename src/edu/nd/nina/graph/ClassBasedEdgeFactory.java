@@ -44,6 +44,7 @@
 package edu.nd.nina.graph;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 
 import edu.nd.nina.*;
 
@@ -86,7 +87,15 @@ public class ClassBasedEdgeFactory<V, E>
     public E createEdge(V source, V target)
     {
 		try {
-			if (edgeClass.getConstructor(Type.class, Type.class) == null) {
+			boolean canconstruct = false;
+			Constructor<?>[] cs = edgeClass.getConstructors();
+			for(Constructor<?> c : cs){
+				if(c.getParameterTypes().length == 2 && c.getParameterTypes()[0].isAssignableFrom(Type.class) && c.getParameterTypes()[1].isAssignableFrom(Type.class)){
+					canconstruct = true;
+				}
+			}
+			
+			if (!canconstruct) {
 				return edgeClass.getConstructor().newInstance();
 			} else {
 				return edgeClass.getConstructor(Type.class, Type.class)

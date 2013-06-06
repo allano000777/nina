@@ -40,7 +40,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 	/**
 	 * Number of tests to do when estimating graph diameter
 	 */
-	private static final Integer NDiamRuns = 1;
+	private static final Integer NDiamRuns = 10;
 	/**
 	 * Number of single values in SVD to return
 	 */
@@ -327,7 +327,7 @@ public class CalculateStatistics<V extends Comparable<V>, E> {
 		fullDiameterMom.def();
 		averageDiameterMom.def();
 
-		statValH.put(StatVal.gsvFullDiam, fullDiameterMom.getMean());
+		statValH.put(StatVal.gsvFullDiam, fullDiameterMom.getMax());
 		statValH.put(StatVal.gsvFullDiamDev, fullDiameterMom.getSDev());
 		statValH.put(StatVal.gsvEffDiam, effectiveDiameterMom.getMean());
 		statValH.put(StatVal.gsvEffDiamDev, effectiveDiameterMom.getSDev());

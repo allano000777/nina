@@ -1,9 +1,7 @@
 package edu.nd.nina.hdtm;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -20,6 +18,7 @@ import java.util.TreeMap;
 
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedFeatureGraph;
+import edu.nd.nina.graph.load.LoadFromHBase;
 import edu.nd.nina.io.FeatureGraph;
 import edu.nd.nina.math.Randoms;
 import edu.nd.nina.types.Alphabet;
@@ -72,7 +71,7 @@ public class HierachicalDocTopicModel {
 	/** LDA-style smoothing on word distributions */
 	private final double eta;
 
-	/** LDA-style sum of the eta values*/
+	/** LDA-style sum of the eta values */
 	private double etaSum;
 
 	/** Restart probability for random walk with restart */
@@ -104,7 +103,8 @@ public class HierachicalDocTopicModel {
 	 * default values
 	 */
 	public HierachicalDocTopicModel(double alpha, double gamma, double eta) {
-		graph = new DirectedFeatureGraph<Instance, DefaultEdge>(DefaultEdge.class);
+		graph = new DirectedFeatureGraph<Instance, DefaultEdge>(
+				DefaultEdge.class, LoadFromHBase.createPipe());
 		this.alpha = alpha;
 		this.gamma = gamma;
 		this.eta = eta;
@@ -159,9 +159,10 @@ public class HierachicalDocTopicModel {
 	 * @param featureGraphFile
 	 * @param random
 	 */
-	public void initialize(File featureGraphFile, Randoms random) {
+	public void initialize(String featureGraphFile, Randoms random) {
 		this.random = random;
-		this.root = FeatureGraph.loadFeatureGraphFromFile(featureGraphFile, graph);
+		this.root = FeatureGraph.loadFeatureGraphFromNutchHBase(
+				featureGraphFile, graph);
 
 		if (!(graph.getInstances().get(0).getData() instanceof FeatureSequence)) {
 			throw new IllegalArgumentException(
@@ -190,7 +191,6 @@ public class HierachicalDocTopicModel {
 			graph.removeVertex(ins);
 		}
 
-		
 		// The initial hierarchy is a breadth first iteration of the original
 		// graph starting from the predefined root node.
 		Map<RWRNode, RWRNode> c = new HashMap<RWRNode, RWRNode>();
@@ -228,6 +228,7 @@ public class HierachicalDocTopicModel {
 			LinkedList<RWRNode> path = new LinkedList<RWRNode>();
 			RWRNode rwrp = m.get(ins);
 			if (rwrp == null) {
+				removes.add(ins);
 				continue;
 			}
 
@@ -255,6 +256,10 @@ public class HierachicalDocTopicModel {
 
 			path.clear();
 		}
+
+		for (Instance ins : removes) {
+			graph.removeVertex(ins);
+		}
 	}
 
 	/**
@@ -277,7 +282,7 @@ public class HierachicalDocTopicModel {
 		for (int iteration = 1; iteration <= numIterations; iteration++) {
 			// If we have passed the burnin period, and we are on a sampleable
 			// iteration, then we should add the current Gibbs-sample to the
-			// list of samples and possibly trace the likelihood values 
+			// list of samples and possibly trace the likelihood values
 			if (iteration >= burnin && iteration % sample == 0) {
 				double ll = calcLogLikelihood(getTypeCounts(), 0, rootNode, 0d);
 
@@ -319,23 +324,24 @@ public class HierachicalDocTopicModel {
 
 		}
 	}
-	
+
 	/**
 	 * Same a path from the root to the current instance/vertex by sampling from
 	 * RWR probabilities
 	 * 
-	 * @param ins Current instance/vertex to which a path is drawn
+	 * @param ins
+	 *            Current instance/vertex to which a path is drawn
 	 */
 	private void samplePath(Instance ins) {
 		LinkedList<RWRNode> path = new LinkedList<RWRNode>();
 		int doc = (Integer) ins.getSource();
 
 		RWRNode node = hierarchyNodes[doc];
-		assert(node != null);		
-			
+		assert (node != null);
+
 		// root doesn't need sampled.
 		if (node.parent == null)
-			return; 
+			return;
 
 		int depth = node.level + 1;
 		hierarchyNodes[doc].dropPath();
@@ -386,9 +392,9 @@ public class HierachicalDocTopicModel {
 				}
 
 				path.get(level).typeCounts[type]--;
-				
+
 				assert (path.get(level).typeCounts[type] >= 0);
-				assert (path.get(level).totalTokens >= 0);				
+				assert (path.get(level).totalTokens >= 0);
 			}
 			path.clear();
 		}
@@ -398,8 +404,8 @@ public class HierachicalDocTopicModel {
 		int[] levelTotalTokens = new int[depth];
 		for (Map<Integer, TIntIntHashMap> typeCounts : descTypeCounts.values()) {
 			// Skip the root...
-			for (int level = 1; level < typeCounts.size() && level < depth; level++) { 
-				if (!typeCounts.containsKey(level)){
+			for (int level = 1; level < typeCounts.size() && level < depth; level++) {
+				if (!typeCounts.containsKey(level)) {
 					continue;
 				}
 				int[] types = typeCounts.get(level).keys();
@@ -433,14 +439,16 @@ public class HierachicalDocTopicModel {
 		}
 
 		for (int i = 0; i < nodes.length; i++) {
-			parenthoodProbabilities[i] = Math.exp(nodeWeights.get(nodes[i]) - max);
+			parenthoodProbabilities[i] = Math.exp(nodeWeights.get(nodes[i])
+					- max);
 			sum += parenthoodProbabilities[i];
 		}
 
-		assert(parenthoodProbabilities.length > 0);
-		
+		assert (parenthoodProbabilities.length > 0);
+
 		// Draw a parent instance/vertex from the probability-set
-		RWRNode newParent = nodes[random.GetDiscrete(parenthoodProbabilities, sum)];
+		RWRNode newParent = nodes[random.GetDiscrete(parenthoodProbabilities,
+				sum)];
 
 		// add the picked parent to the hierarchy
 		int oldLevel = hierarchyNodes[doc].level;
@@ -450,10 +458,10 @@ public class HierachicalDocTopicModel {
 
 		hierarchyNodes[doc].addPath();
 
-		//Reassign levels to descendants
+		// Reassign levels to descendants
 		propagateLevelsToDesc(hierarchyNodes[doc], newParent.level + 1);
 
-		int newLevel = hierarchyNodes[doc].level;		
+		int newLevel = hierarchyNodes[doc].level;
 
 		RWRNode x = hierarchyNodes[doc];
 		RWRNode[] newpath = new RWRNode[x.level + 1];
@@ -548,11 +556,11 @@ public class HierachicalDocTopicModel {
 				node = node.parent;
 			}
 
-			assert(path.getLast().level == path.size() - 1);
+			assert (path.getLast().level == path.size() - 1);
 		}
 
 	}
-	
+
 	/**
 	 * 
 	 * @param ins
@@ -630,14 +638,13 @@ public class HierachicalDocTopicModel {
 
 	}
 
-
 	/**
 	 * Adds the current sample's parent to the list of sampled parents.
 	 * 
 	 * @param currentVertex
 	 *            Vertex to record
 	 */
-	private void recordParent(RWRNode currentVertex) {		
+	private void recordParent(RWRNode currentVertex) {
 		if (currentVertex != null && currentVertex.parent != null) {
 			currentVertex.addParent(currentVertex.parent.ins);
 		}
@@ -754,8 +761,6 @@ public class HierachicalDocTopicModel {
 		return nodeWeight;
 	}
 
-	
-
 	/**
 	 * Updates the levels of the children after reassigning its parent
 	 * 
@@ -804,7 +809,8 @@ public class HierachicalDocTopicModel {
 		// target in the original directedFeatureGraph. In fact, its not even
 		// stored in the result map
 		if (graph.containsEdge(parentCandidate.ins, target.ins)) {
-			parentProbabilities.put(parentCandidate, parentProbability + Math.log(gamma));
+			parentProbabilities.put(parentCandidate,
+					parentProbability + Math.log(gamma));
 		}
 	}
 
@@ -851,8 +857,9 @@ public class HierachicalDocTopicModel {
 
 			for (int type : types) {
 				for (int i = 0; i < typeCounts.get(level).get(type); i++) {
-					nodeWeight += Math.log((eta + parentCandidate.typeCounts[type] + i)
-							/ (etaSum + parentCandidate.totalTokens + totalTokens));
+					nodeWeight += Math
+							.log((eta + parentCandidate.typeCounts[type] + i)
+									/ (etaSum + parentCandidate.totalTokens + totalTokens));
 					totalTokens++;
 				}
 			}
@@ -1038,7 +1045,7 @@ public class HierachicalDocTopicModel {
 		 * vertex/document
 		 */
 		int totalTokens;
-		
+
 		/**
 		 * Counts of terms appearing in the topic corresponding to the current
 		 * vertex/document
@@ -1074,7 +1081,7 @@ public class HierachicalDocTopicModel {
 			this.typeCounts = new int[dimensions];
 			this.parentList = new HashMap<Instance, Integer>();
 		}
-		
+
 		/**
 		 * Constructor for root
 		 * 
@@ -1087,7 +1094,6 @@ public class HierachicalDocTopicModel {
 		private RWRNode(int dimensions, Instance ins) {
 			this(null, dimensions, 0, ins);
 		}
-
 
 		@Override
 		public String toString() {
@@ -1202,11 +1208,11 @@ public class HierachicalDocTopicModel {
 
 		// The filename in which to write the Gibbs sampling state after at the
 		// end of the iterations
-		File dataFile = new File("./data/hdtm/testdata/test.txt");
-		File outputFile = new File("./data/hdtm/testdata/test_output.txt");
-		File resultsFile = new File("./data/hdtm/testdata/test_results.txt");
-		File lltraceFile = new File("./data/hdtm/testdata/test_lltrace.txt");
-		File bestgraphFile = new File("./data/hdtm/testdata/test_bestgraph.txt");
+		// File dataFile = new File("./data/hdtm/illinois.edu.fg");
+		File outputFile = new File("./data/hdtm/illinois.edu_output.txt");
+		File resultsFile = new File("./data/hdtm/illinois.edu_results.txt");
+		File lltraceFile = new File("./data/hdtm/illinois.edu_lltrace.txt");
+		File bestgraphFile = new File("./data/hdtm/illinois.edu_bestgraph.txt");
 
 		// The random seed for the Gibbs sampler. Default is 0, which will use
 		// the clock.
@@ -1263,7 +1269,9 @@ public class HierachicalDocTopicModel {
 
 		// Initialize and start the sampler
 
-		hlda.initialize(dataFile, random);
+		hlda.initialize(
+				"C:\\Users\\weninger\\Downloads\\enwiki-20130503-pages-articles1.xml-p000000010p000010000.bz2",
+				random);
 
 		hlda.estimate(numIterations, 100, 10);
 

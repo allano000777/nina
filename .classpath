@@ -11,7 +11,18 @@
 	<classpathentry kind="lib" path="lib/commons-compress-1.5.jar"/>
 	<classpathentry kind="lib" path="lib/colt.jar" sourcepath="C:/Users/weninger/Downloads/colt-1.2.0.zip"/>
 	<classpathentry kind="lib" path="lib/concurrent.jar"/>
+	<classpathentry kind="lib" path="lib/hbase-0.90.6.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-core-1.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-configuration-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.4.3.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.4.3.jar"/>
+	<classpathentry kind="lib" path="lib/zookeeper-3.3.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/kryo-2.21-all.jar"/>
+	<classpathentry kind="src" path="/mallet-2.0.7"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/wikixmlj"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

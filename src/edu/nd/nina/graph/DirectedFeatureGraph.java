@@ -91,6 +91,12 @@ public class DirectedFeatureGraph<V extends Instance, E> extends AbstractBaseGra
 		instances.addThruPipe(v);
 		return super.addVertex(v);
 	}
+	
+	@Override
+	public boolean removeVertex(V v) {
+		instances.remove(v);
+		return super.removeVertex(v);
+	}
 
 	public InstanceList getInstances() {
 		return instances;

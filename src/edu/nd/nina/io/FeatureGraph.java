@@ -8,21 +8,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import edu.jhu.nlp.wikipedia.PageCallbackHandler;
-import edu.jhu.nlp.wikipedia.WikiPage;
-import edu.jhu.nlp.wikipedia.WikiXMLParser;
-import edu.jhu.nlp.wikipedia.WikiXMLParserFactory;
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedFeatureGraph;
 import edu.nd.nina.types.Instance;
@@ -206,6 +202,125 @@ public class FeatureGraph {
 					if (tempMap.containsKey(key) && tempMap.containsKey(bas)) {
 
 						graph.addEdge(tempMap.get(bas), tempMap.get(key));
+					}
+
+				}
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+			testTable.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return root;
+	}
+	
+	
+	public static Instance loadFeatureGraphFromWikiHbase(
+			String domain,
+			DirectedFeatureGraph<Instance, DefaultEdge> graph) {
+		Configuration config = HBaseConfiguration.create();
+		config.set("hbase.zookeeper.quorum", "dmserv3.cs.illinois.edu");
+		HashMap<String, Instance> tempMap = new HashMap<String, Instance>();
+		Instance root = null;
+
+		HTable testTable = null;
+		try {
+			testTable = new HTable(config, "wikipedia");
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+
+		
+		Scan scan = new Scan(Bytes.toBytes("A"), Bytes.toBytes("B"));
+
+		// scan.addFamily(family);
+		scan.addColumn(Bytes.toBytes("p"), Bytes.toBytes("t"));
+		scan.addColumn(Bytes.toBytes("p"), Bytes.toBytes("text"));
+		
+
+		ResultScanner rs = null;
+		try {
+			rs = testTable.getScanner(scan);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			int i=0;
+			for (Result r = rs.next(); r != null; r = rs.next()) {
+
+				List<KeyValue> cList = r.getColumn(Bytes.toBytes("p"),
+						Bytes.toBytes("text"));
+				String c = "";
+				if (cList.size() >= 1) {
+					c = Bytes.toString(cList.get(0).getValue());
+				}
+
+				List<KeyValue> basList = r.getColumn(Bytes.toBytes("p"),
+						Bytes.toBytes("t"));
+				
+				byte[] bas = {};
+				if (basList.size() >= 1) {
+					bas = basList.get(0).getValue();
+				}
+				
+				String bStr = Bytes.toString(bas);
+			
+
+				Instance ins = new Instance(c, false ,bStr, i);
+				tempMap.put(bStr, ins);
+				
+				System.out.println(bStr);
+				
+				if(root == null && bStr.equals("A")){
+					root = ins;
+				}
+				
+				graph.addVertex(ins);
+				i++;
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		scan = new Scan(Bytes.toBytes("A"), Bytes.toBytes("B"));
+
+		scan.addFamily(Bytes.toBytes("ol"));
+		scan.addColumn(Bytes.toBytes("p"), Bytes.toBytes("t"));
+
+		try {
+			rs = testTable.getScanner(scan);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			for (Result r = rs.next(); r != null; r = rs.next()) {
+
+				List<KeyValue> basList = r.getColumn(Bytes.toBytes("p"),
+						Bytes.toBytes("t"));
+				String bas = "";
+				if (basList.size() >= 1) {
+					bas = Bytes.toString(basList.get(0).getValue());
+				}
+
+				Map<byte[], byte[]> olList = r.getFamilyMap(Bytes.toBytes("ol"));
+				for (byte[] x : olList.values()) {
+					String l = Bytes.toString(x);
+
+					if (tempMap.containsKey(l) && tempMap.containsKey(bas)) {
+
+						graph.addEdge(tempMap.get(bas), tempMap.get(l));
 					}
 
 				}

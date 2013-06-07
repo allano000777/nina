@@ -4,6 +4,9 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -20,9 +23,10 @@ public class WikidumpToHbase {
 		config.set("hbase.zookeeper.quorum", "dmserv3.cs.illinois.edu");
 
 		try {
+			createTable(config, "wikipedia", new String[] {"p", "c", "ol"});
 			final HTable table = new HTable(config, "wikipedia");
-
-			WikiXMLParser wxsp = WikiXMLParserFactory.getSAXParser("");
+			table.setAutoFlush(false);
+			WikiXMLParser wxsp = WikiXMLParserFactory.getSAXParser("C:\\Users\\weninger\\Downloads\\enwiki-latest-pages-articles.xml.bz2");
 
 			wxsp.setPageCallback(new PageCallbackHandler() {
 				int i = 0;
@@ -30,7 +34,7 @@ public class WikidumpToHbase {
 				public void process(WikiPage page) {
 
 					String title = page.getTitle();
-					title = title.toLowerCase().trim();
+					title = title.trim();
 
 					System.out.println(i + ": " + title);
 					Put p = new Put(Bytes.toBytes(title));
@@ -52,14 +56,14 @@ public class WikidumpToHbase {
 							Bytes.toBytes(page.isStub()));
 
 					for (String s : page.getCategories()) {
-						s = s.toLowerCase().trim();
-						p.add(Bytes.toBytes("p"), Bytes.toBytes("cat"),
+						s = s.trim();
+						p.add(Bytes.toBytes("c"), Bytes.toBytes(s),
 								Bytes.toBytes(s));
 					}
 
 					for (String s : page.getLinks()) {
-						s = s.toLowerCase().trim();
-						p.add(Bytes.toBytes("p"), Bytes.toBytes("cat"),
+						s = s.trim();
+						p.add(Bytes.toBytes("ol"), Bytes.toBytes(s),
 								Bytes.toBytes(s));
 					}
 
@@ -82,5 +86,24 @@ public class WikidumpToHbase {
 		}
 
 	}
+	
+	/**
+     * Create a table
+     */
+    public static void createTable(Configuration conf, String tableName, String[] familys)
+            throws Exception {
+        HBaseAdmin admin = new HBaseAdmin(conf);
+        if (admin.tableExists(tableName)) {
+            System.out.println("table already exists!");
+        } else {
+            HTableDescriptor tableDesc = new HTableDescriptor(tableName);
+            for (int i = 0; i < familys.length; i++) {
+                tableDesc.addFamily(new HColumnDescriptor(familys[i]));
+            }
+            admin.createTable(tableDesc);
+            System.out.println("create table " + tableName + " ok.");
+        }
+        admin.close();
+    }
 
 }

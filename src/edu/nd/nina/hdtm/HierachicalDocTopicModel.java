@@ -161,7 +161,7 @@ public class HierachicalDocTopicModel {
 	 */
 	public void initialize(String featureGraphFile, Randoms random) {
 		this.random = random;
-		this.root = FeatureGraph.loadFeatureGraphFromNutchHBase(
+		this.root = FeatureGraph.loadFeatureGraphFromWikiHbase(
 				featureGraphFile, graph);
 
 		if (!(graph.getInstances().get(0).getData() instanceof FeatureSequence)) {
@@ -218,6 +218,20 @@ public class HierachicalDocTopicModel {
 				}
 			}
 		}
+		
+		//remove non linked
+		for (Instance ins : graph.vertexSet()) {
+			RWRNode rwrp = m.get(ins);
+			if (rwrp == null) {
+				removes.add(ins);
+				continue;
+			}
+		}
+		
+		for (Instance ins : removes) {
+			graph.removeVertex(ins);
+		}
+		
 
 		// Initialize and fill the topic pointer arrays for every document. Set
 		// everything to the breadth first hierarchy that we added earlier.
@@ -228,7 +242,6 @@ public class HierachicalDocTopicModel {
 			LinkedList<RWRNode> path = new LinkedList<RWRNode>();
 			RWRNode rwrp = m.get(ins);
 			if (rwrp == null) {
-				removes.add(ins);
 				continue;
 			}
 
@@ -257,9 +270,6 @@ public class HierachicalDocTopicModel {
 			path.clear();
 		}
 
-		for (Instance ins : removes) {
-			graph.removeVertex(ins);
-		}
 	}
 
 	/**
@@ -1223,7 +1233,7 @@ public class HierachicalDocTopicModel {
 
 		// If true, print a character to standard output after every sampling
 		// iteration.
-		Boolean showProgress = false;
+		Boolean showProgress = true;
 
 		// The number of iterations between printing a brief summary of the
 		// topics so far

@@ -18,6 +18,7 @@ import java.util.TreeMap;
 
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedFeatureGraph;
+import edu.nd.nina.graph.load.LoadFromFeatureGraph;
 import edu.nd.nina.graph.load.LoadFromHBase;
 import edu.nd.nina.io.FeatureGraph;
 import edu.nd.nina.math.Randoms;
@@ -104,7 +105,7 @@ public class HierachicalDocTopicModel {
 	 */
 	public HierachicalDocTopicModel(double alpha, double gamma, double eta) {
 		graph = new DirectedFeatureGraph<Instance, DefaultEdge>(
-				DefaultEdge.class, LoadFromHBase.createPipe());
+				DefaultEdge.class, LoadFromFeatureGraph.createPipe());
 		this.alpha = alpha;
 		this.gamma = gamma;
 		this.eta = eta;
@@ -159,37 +160,13 @@ public class HierachicalDocTopicModel {
 	 * @param featureGraphFile
 	 * @param random
 	 */
-	public void initialize(String featureGraphFile, Randoms random) {
+	public void initialize(File featureGraphFile, Randoms random,
+			String rootName) {
 		this.random = random;
-		this.root = FeatureGraph.loadFeatureGraphFromWikiHbase(
-				featureGraphFile, graph);
-
-		if (!(graph.getInstances().get(0).getData() instanceof FeatureSequence)) {
-			throw new IllegalArgumentException(
-					"Input must be a FeatureSequence");
-		}
-
-		numInstances = graph.getInstances().size();
-		numTypes = graph.getInstances().getDataAlphabet().size();
-
-		etaSum = eta * numTypes;
+		this.root = FeatureGraph.loadFeatureGraphFromFile(featureGraphFile,
+				graph, rootName);
 
 		rootNode = new RWRNode(numTypes, root);
-
-		levels = new int[numInstances][];
-		hierarchyNodes = new RWRNode[numInstances];
-
-		// Vertices without a proper id should be removed
-		ArrayList<Instance> removes = new ArrayList<Instance>();
-		for (Instance pn : graph.vertexSet()) {
-			if (pn.getSource() == null) {
-				removes.add(pn);
-			}
-		}
-
-		for (Instance ins : removes) {
-			graph.removeVertex(ins);
-		}
 
 		// The initial hierarchy is a breadth first iteration of the original
 		// graph starting from the predefined root node.
@@ -218,8 +195,10 @@ public class HierachicalDocTopicModel {
 				}
 			}
 		}
-		
-		//remove non linked
+
+		ArrayList<Instance> removes = new ArrayList<Instance>();
+
+		// remove non linked
 		for (Instance ins : graph.vertexSet()) {
 			RWRNode rwrp = m.get(ins);
 			if (rwrp == null) {
@@ -227,11 +206,38 @@ public class HierachicalDocTopicModel {
 				continue;
 			}
 		}
-		
+
 		for (Instance ins : removes) {
 			graph.removeVertex(ins);
 		}
-		
+
+		graph.resolveInstances();
+
+		if (!(graph.getInstances().get(0).getData() instanceof FeatureSequence)) {
+			throw new IllegalArgumentException(
+					"Input must be a FeatureSequence");
+		}
+
+		numInstances = graph.getInstances().size();
+		numTypes = graph.getInstances().getDataAlphabet().size();
+
+		// initialize the typecount arrays
+		for (RWRNode rn : m.values()) {
+			rn.typeCounts = new int[numTypes];
+		}
+
+		// renormalize the sourcecounts
+		int i = 0;
+		for (Instance ins : graph.vertexSet()) {
+			ins.unLock();
+			ins.setSource(i++);
+			ins.lock();
+		}
+
+		etaSum = eta * numTypes;
+
+		levels = new int[numInstances][];
+		hierarchyNodes = new RWRNode[numInstances];
 
 		// Initialize and fill the topic pointer arrays for every document. Set
 		// everything to the breadth first hierarchy that we added earlier.
@@ -986,7 +992,7 @@ public class HierachicalDocTopicModel {
 		}
 
 		out.append(node.totalTokens + "/" + node.customers + " ");
-		out.append(node.ins.getSource() + " ");
+		out.append(node.ins.getName() + " ");
 		out.append(node.getTopTypes());
 		bestHierarchyWriter.println(out);
 
@@ -1005,18 +1011,22 @@ public class HierachicalDocTopicModel {
 	public void printResults(PrintWriter writer) {
 
 		for (RWRNode n : hierarchyNodes) {
-			int max = 0;
+			int total = 0;
 			if (n == null)
 				continue;
 			Instance best = n.ins;
 			for (Entry<Instance, Integer> e : n.parentList.entrySet()) {
-				if (e.getValue() > max) {
-					max = e.getValue();
-					best = e.getKey();
-				}
+				total += e.getValue();
 			}
-			writer.println(best.getSource().toString() + " -> "
-					+ n.ins.getSource().toString());
+
+			for (Entry<Instance, Integer> e : n.parentList.entrySet()) {
+				float weight = ((float) (e.getValue() * 100)) / (float) total;
+				writer.println(e.getKey().getName().toString() + " -> "
+						+ n.ins.getName().toString() + "[weight=\""
+						+ (int) weight + "\"]");
+
+			}
+
 		}
 
 		writer.println();
@@ -1196,9 +1206,9 @@ public class HierachicalDocTopicModel {
 		 * @return String with K most frequent types/words
 		 */
 		private String getTopTypes() {
-			ValueSorter[] sortedTypes = new ValueSorter[numWordsToDisplay];
+			ValueSorter[] sortedTypes = new ValueSorter[typeCounts.length];
 
-			for (int type = 0; type < numWordsToDisplay; type++) {
+			for (int type = 0; type < typeCounts.length; type++) {
 				sortedTypes[type] = new ValueSorter(type, typeCounts[type]);
 			}
 			Arrays.sort(sortedTypes);
@@ -1216,13 +1226,22 @@ public class HierachicalDocTopicModel {
 
 	public static void main(String[] args) {
 
+		// Gamma parameter: CRP smoothing parameter; number of imaginary
+		// customers at next, as yet unused table
+		
+		Double[] gammas = {.25, .50, .75, .99};
+		
+		for(Double gamma : gammas){
+		
+
+			
 		// The filename in which to write the Gibbs sampling state after at the
 		// end of the iterations
-		// File dataFile = new File("./data/hdtm/illinois.edu.fg");
-		File outputFile = new File("./data/hdtm/illinois.edu_output.txt");
-		File resultsFile = new File("./data/hdtm/illinois.edu_results.txt");
-		File lltraceFile = new File("./data/hdtm/illinois.edu_lltrace.txt");
-		File bestgraphFile = new File("./data/hdtm/illinois.edu_bestgraph.txt");
+		File dataFile = new File("./data/hdtm/Category_Agriculture.txt");
+		File outputFile = new File("./data/hdtm/Category_Agriculture_output_"+gamma+".txt");
+		File resultsFile = new File("./data/hdtm/Category_Agriculture_results_"+gamma+".txt");
+		File lltraceFile = new File("./data/hdtm/Category_Agriculture_lltrace_"+gamma+".txt");
+		File bestgraphFile = new File("./data/hdtm/Category_Agriculture_bestgraph_"+gamma+".txt");
 
 		// The random seed for the Gibbs sampler. Default is 0, which will use
 		// the clock.
@@ -1245,10 +1264,6 @@ public class HierachicalDocTopicModel {
 
 		// Alpha parameter: smoothing over level distributions.
 		Double alpha = 10.0;
-
-		// Gamma parameter: CRP smoothing parameter; number of imaginary
-		// customers at next, as yet unused table
-		Double gamma = .95;
 
 		// Eta parameter: smoothing over topic-word distributions
 		Double eta = 0.1;
@@ -1280,10 +1295,11 @@ public class HierachicalDocTopicModel {
 		// Initialize and start the sampler
 
 		hlda.initialize(
-				"C:\\Users\\weninger\\Downloads\\enwiki-20130503-pages-articles1.xml-p000000010p000010000.bz2",
-				random);
+				dataFile,
+				random,
+				"Agriculture");
 
-		hlda.estimate(numIterations, 100, 10);
+		hlda.estimate(numIterations, 500, 10);
 
 		// Output results
 
@@ -1303,5 +1319,6 @@ public class HierachicalDocTopicModel {
 			e.printStackTrace();
 		}
 
+	}
 	}
 }

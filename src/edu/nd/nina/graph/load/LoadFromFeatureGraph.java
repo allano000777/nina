@@ -70,8 +70,8 @@ public class LoadFromFeatureGraph {
 			// into a LabelAlphabet.
 			pipeList.add(new Target2Label());
 
-			// The "data" field is currently a filename. Save it as "source".
-			// pipeList.add(new SaveDataInSource());
+			// The second token is the Name - add it to the name
+			pipeList.add(new NameToName());
 
 			// Set "data" to the file's contents. "data" is now a String.
 			pipeList.add(new Input2CharSequence(encoding));
@@ -109,6 +109,7 @@ public class LoadFromFeatureGraph {
 			
 			// The first token is the ID - add it to the source
 			pipeList.add(new IDToSource());
+			
 			
 			if (!preserveCase) {
 				pipeList.add(new TokenSequenceLowercase());

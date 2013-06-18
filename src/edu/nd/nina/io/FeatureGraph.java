@@ -13,12 +13,15 @@ import java.util.NavigableMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import edu.nd.nina.DirectedGraph;
+import edu.nd.nina.graph.DefaultDirectedGraph;
 import edu.nd.nina.graph.DefaultEdge;
 import edu.nd.nina.graph.DirectedFeatureGraph;
 import edu.nd.nina.types.Instance;
@@ -46,7 +49,7 @@ public class FeatureGraph {
 	 *            directedFeatureGraph
 	 * @return The root vertex of the newly loaded directedFeatureGraph
 	 */
-	public static Instance loadFeatureGraphFromFile(File featureGraphFile, DirectedFeatureGraph<Instance, DefaultEdge> graph) {
+	public static Instance loadFeatureGraphFromFile(File featureGraphFile, DirectedFeatureGraph<Instance, DefaultEdge> graph, String rootName) {
 		System.out.println("Reading " + featureGraphFile);
 		Instance root = null;
 
@@ -71,13 +74,20 @@ public class FeatureGraph {
 
 				if (!line.contains("->")) {
 					Instance ins = new Instance(line, false, null, null);
+					
 					tempMap.put(
 							Integer.parseInt(line.substring(0,
 									line.indexOf(" "))), ins);
-					if (root == null) {
+					
+					graph.addVertex(ins);
+					
+					int f = (line).indexOf(" "); 
+					String ts = line.substring(f, line.indexOf(" ", f+1)).trim();
+			
+					
+					if (root == null && ts.equals(rootName)) {
 						root = ins;
 					}
-					graph.addVertex(ins);
 				} else {
 					String[] edges = line.split("->");
 					graph.addEdge(
@@ -340,6 +350,8 @@ public class FeatureGraph {
 
 		return root;
 	}
+
+
 	
 	
 }

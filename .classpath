@@ -20,9 +20,11 @@
 	<classpathentry kind="lib" path="lib/slf4j-api-1.4.3.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.4.3.jar"/>
 	<classpathentry kind="lib" path="lib/zookeeper-3.3.2.jar"/>
+	<classpathentry kind="lib" path="lib/wikixmlj.jar"/>
+	<classpathentry kind="lib" path="lib/bzip2.jar"/>
+	<classpathentry kind="lib" path="lib/xercesImpl.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="lib/kryo-2.21-all.jar"/>
 	<classpathentry kind="src" path="/mallet-2.0.7"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/wikixmlj"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
